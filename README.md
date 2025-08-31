@@ -1,6 +1,43 @@
 # fileload4
 
 
+
+
+
+
+import tensorrt as trt
+import pycuda.driver as cuda
+import pycuda.autoinit  # 初始化CUDA driver
+
+TRT_LOGGER = trt.Logger(trt.Logger.VERBOSE)  # 相当于 --verbose
+
+engine_file = "/home/ma-user/work/video-deal-service/weights/CP26classes_epoch_180_fp16_bs10_640_1088_fromAPI.trt"
+
+# 1. 读取engine文件
+with open(engine_file, "rb") as f:
+    runtime = trt.Runtime(TRT_LOGGER)
+    engine = runtime.deserialize_cuda_engine(f.read())
+
+# 2. 创建执行上下文
+context = engine.create_execution_context()
+
+# 3. 分配输入输出显存
+bindings = []
+for i in range(engine.num_bindings):
+    name = engine.get_binding_name(i)          # 返回 string
+    dtype = trt.nptype(engine.get_binding_dtype(i))
+    shape = context.get_binding_shape(i)       # 传 index
+    io_type = "Input" if engine.binding_is_input(i) else "Output"
+    print(f"{io_type} -> Name: {name}, Index: {i}, Shape: {shape}, Dtype: {dtype}")
+
+# 4. 你可以手动拷贝输入数据到 device，然后运行推理
+# context.execute_v2(bindings=bindings)   # 对应 enqueueV2
+
+
+
+
+
+
 Input -> Name: images, Index: 0, Shape: (10, 3, 640, 1088), Dtype: <class 'numpy.float16'>
 Output -> Name: output0, Index: 1, Shape: (10, 42840, 31), Dtype: <class 'numpy.float16'>
 [08/31/2025-21:20:58] [TRT] [E] 1: [defaultAllocator.cpp::deallocate::35] Error Code 1: Cuda Runtime (invalid argument)
