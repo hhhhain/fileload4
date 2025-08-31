@@ -2,6 +2,16 @@
 
 
 
+for i in range(engine.num_bindings):
+    name = engine.get_binding_name(i)          # 返回 string
+    dtype = trt.nptype(engine.get_binding_dtype(i))
+    shape = context.get_binding_shape(i)       # 传 index
+    io_type = "Input" if engine.binding_is_input(i) else "Output"
+    print(f"{io_type} -> Name: {name}, Index: {i}, Shape: {shape}, Dtype: {dtype}")
+
+
+
+
 
 
 
