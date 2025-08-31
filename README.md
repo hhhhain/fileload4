@@ -3,6 +3,23 @@
 
 
 
+
+
+Traceback (most recent call last):
+  File "test.py", line 22, in <module>
+    shape = context.get_binding_shape(binding)
+TypeError: get_binding_shape(): incompatible function arguments. The following argument types are supported:
+    1. (self: tensorrt.tensorrt.IExecutionContext, binding: int) -> tensorrt.tensorrt.Dims
+
+Invoked with: <tensorrt.tensorrt.IExecutionContext object at 0x7fce27c259b0>, 'images'
+[08/31/2025-21:15:07] [TRT] [E] 1: [defaultAllocator.cpp::deallocate::35] Error Code 1: Cuda Runtime (invalid argument)
+Segmentation fault
+
+
+
+
+
+
 import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit  # 初始化CUDA driver
