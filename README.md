@@ -1,6 +1,11 @@
 # fileload4
 
 
+Input -> Name: images, Index: 0, Shape: (10, 3, 640, 1088), Dtype: <class 'numpy.float16'>
+Output -> Name: output0, Index: 1, Shape: (10, 42840, 31), Dtype: <class 'numpy.float16'>
+[08/31/2025-21:20:58] [TRT] [E] 1: [defaultAllocator.cpp::deallocate::35] Error Code 1: Cuda Runtime (invalid argument)
+Segmentation fault
+
 
 for i in range(engine.num_bindings):
     name = engine.get_binding_name(i)          # 返回 string
