@@ -5,6 +5,51 @@
 
 
 
+
+import tensorrt as trt
+from pathlib import Path
+
+# 1. 设置 TensorRT logger
+TRT_LOGGER = trt.Logger(trt.Logger.INFO)
+
+# 2. 指定 engine 文件路径
+engine_file = "/home/ma-user/work/video-deal-service/weights/CP26classes_epoch_180_fp16_bs10_640_1088_fromAPI.trt"
+assert Path(engine_file).exists(), f"Engine file not found: {engine_file}"
+
+# 3. 反序列化 engine
+with open(engine_file, "rb") as f:
+    runtime = trt.Runtime(TRT_LOGGER)
+    engine = runtime.deserialize_cuda_engine(f.read())
+    assert engine is not None, "Failed to deserialize engine"
+
+print("Engine deserialized successfully!")
+print(f"Number of bindings: {engine.num_bindings}")
+
+# 4. 创建执行上下文
+context = engine.create_execution_context()
+assert context is not None, "Failed to create execution context"
+print("Execution context created successfully!")
+
+# 5. 打印每个 binding 的信息
+for i in range(engine.num_bindings):
+    name = engine.get_binding_name(i)
+    dtype = engine.get_binding_dtype(i)
+    shape = context.get_binding_shape(i)
+    io_type = "Input" if engine.binding_is_input(i) else "Output"
+    print(f"{io_type} -> Name: {name}, Index: {i}, Shape: {shape}, Dtype: {dtype}")
+
+
+
+
+
+
+
+
+
+
+
+
+
 import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit  # 初始化CUDA driver
