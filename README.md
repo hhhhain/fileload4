@@ -3,6 +3,44 @@
 
 
 
+import tensorrt as trt
+import pycuda.driver as cuda
+import pycuda.autoinit  # 初始化CUDA driver
+
+TRT_LOGGER = trt.Logger(trt.Logger.VERBOSE)  # 相当于 --verbose
+
+engine_file = "your.engine"
+
+# 1. 读取engine文件
+with open(engine_file, "rb") as f:
+    runtime = trt.Runtime(TRT_LOGGER)
+    engine = runtime.deserialize_cuda_engine(f.read())
+
+# 2. 创建执行上下文
+context = engine.create_execution_context()
+
+# 3. 分配输入输出显存
+bindings = []
+for binding in engine:
+    binding_idx = engine.get_binding_index(binding)
+    dtype = trt.nptype(engine.get_binding_dtype(binding))
+    shape = context.get_binding_shape(binding)
+
+    size = trt.volume(shape) * engine.max_batch_size  # 显存大小
+    device_mem = cuda.mem_alloc(size * dtype().itemsize)
+    bindings.append(int(device_mem))
+
+    print(f"Binding: {binding}, Shape: {shape}, Dtype: {dtype}, Index: {binding_idx}")
+
+# 4. 你可以手动拷贝输入数据到 device，然后运行推理
+# context.execute_v2(bindings=bindings)   # 对应 enqueueV2
+
+
+
+
+
+
+
 [08/31/2025-20:54:33] [TRT] [W] The enqueue() method has been deprecated when used with engines built from a network created with NetworkDefinitionCreationFlag::kEXPLICIT_BATCH flag. Please use enqueueV2() instead.
 [08/31/2025-20:54:33] [TRT] [W] Also, the batchSize argument passed into this function has no effect on changing the input shapes. Please use setBindingDimensions() function to change input shapes instead.
 
