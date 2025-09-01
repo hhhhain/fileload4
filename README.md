@@ -1,3 +1,6 @@
+torch.onnx.export(model, input, file, enable_onnx_checker=True, *args, **kwargs)
+
+
 ModelImporter.cpp:771: While parsing node number 417 [QuantizeLinear -> "/model.9/cv2/conv/_weight_quantizer/QuantizeLinear_output_0"]:
 [09/01/2025-21:22:14] [E] [TRT] ModelImporter.cpp:772: --- Begin node ---
 [09/01/2025-21:22:14] [E] [TRT] ModelImporter.cpp:773: input: "model.9.cv2.conv.weight"
