@@ -1,31 +1,13 @@
-        start_evt = cuda.Event()
-        end_evt = cuda.Event()
+ERROR Abnormal_Detect_model.run(Abnormal_Detect_model.py:797): execute_async_v3(): incompatible function arguments. The following argument types are supported:
+    1. (self: tensorrt.tensorrt.IExecutionContext, stream_handle: int) -> bool
 
-        start_evt.record(stream) 
-        cuda.memcpy_htod_async(cuda_inputs[0], host_inputs[0], stream)
-        end_evt.record(stream) 
-        end_evt.synchronize() 
-        print(f"HTOD memcpy: {start_evt.time_till(end_evt):.2f} ms")
-        
-        # Run inference.
-        # context.execute_async(batch_size=self.batch_size, bindings=bindings, stream_handle=stream.handle)
-        start_evt.record(stream) 
-        # context.profiler = trt.Profiler()
-        # context.execute_async_v3(bindings=bindings, stream_handle=stream.handle)
-        context.execute_async(batch_size=self.batch_size, bindings=bindings, stream_handle=stream.handle)
-        end_evt.record(stream) 
-        end_evt.synchronize() 
-        print(f"infer: {start_evt.time_till(end_evt):.2f} ms")        
-        # Transfer predictions back from the GPU.
-        # for 
-        log.info(f"length host_outputs:{len(host_outputs)}")
-        # cuda.memcpy_dtoh_async(host_outputs[-1], cuda_outputs[-1], stream)
-        # # for i in range(len(cuda_outputs)):
-        # #     cuda.memcpy_dtoh_async(host_outputs[i], cuda_outputs[i], stream)
-        # #     # host_outputs[i] = host_outputs[i].reshape(self.output_shape)
-        # # Synchronize the stream
-        start_evt.record(stream) 
-        cuda.memcpy_dtoh_async(host_outputs[-1], cuda_outputs[-1], stream)
-        end_evt.record(stream) 
-        end_evt.synchronize() 
-        print(f"DTOH memcpy: {start_evt.time_till(end_evt):.2f} ms") 
+Invoked with: <tensorrt.tensorrt.IExecutionContext object at 0x7ff0c036f170>; kwargs: bindings=[140670480154624, 140670345936896], stream_handle=139156416
+Traceback (most recent call last):
+  File "/home/ma-user/work/copy/files/video-deal-search/video-deal-service/Abnormal_Detect_model.py", line 766, in run
+    handler, det_p = self.object_detect(handler, trace_id)
+  File "/home/ma-user/work/copy/files/video-deal-search/video-deal-service/Abnormal_Detect_model.py", line 721, in object_detect
+    det_output_p = self.cp_yolov5trt.infer(handler.img, "CP") # img-->640, 1088.
+  File "/home/ma-user/work/copy/files/video-deal-search/video-deal-service/object_detect.py", line 256, in infer
+    context.execute_async_v3(bindings=bindings, stream_handle=stream.handle)
+TypeError: execute_async_v3(): incompatible function arguments. The following argument types are supported:
+    1. (self: tensorrt.tensorrt.IExecutionContext, stream_handle: int) -> bool
