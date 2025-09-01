@@ -1,7 +1,7 @@
 # fileload4
 
 
-
+Error Code 3: API Usage Error (Parameter check failed at: runtime/api/executionContext.cpp::validateInputBindings::2083, condition: profileMinDims.d[i] <= dimensions.d[i]. Supplied binding dimension [1,3,640,1088] for bindings[0] exceed min ~ max range at index 0, maximum dimension in profile is 10, minimum dimension in profile is 10, but supplied dimension is 1.
 
 
 
