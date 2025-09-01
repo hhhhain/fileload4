@@ -1,6 +1,32 @@
 # fileload4
 
 
+
+
+
+class YoLov5TRT(object):
+    """
+    description: A YOLOv5 class that warps TensorRT ops, preprocess and postprocess ops.
+    """
+
+    def __init__(self, engine_file_path):
+        # Create a Context on this device,
+        self.ctx = cuda.Device(0).make_context()
+        stream = cuda.Stream()
+        TRT_LOGGER = trt.Logger(trt.Logger.INFO)
+        runtime = trt.Runtime(TRT_LOGGER)
+
+        # Deserialize the engine from file
+        with open(engine_file_path, "rb") as f:
+            engine = runtime.deserialize_cuda_engine(f.read())
+        context = engine.create_execution_context()
+
+
+
+
+
+
+
 Error Code 3: API Usage Error (Parameter check failed at: runtime/api/executionContext.cpp::validateInputBindings::2083, condition: profileMinDims.d[i] <= dimensions.d[i]. Supplied binding dimension [1,3,640,1088] for bindings[0] exceed min ~ max range at index 0, maximum dimension in profile is 10, minimum dimension in profile is 10, but supplied dimension is 1.
 
 
