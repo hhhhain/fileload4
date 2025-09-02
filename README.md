@@ -159,3 +159,63 @@ fp16+sp50：
 [09/02/2025-18:44:08] [I] H2D Latency: min = 6.76492 ms, max = 6.79785 ms, mean = 6.77394 ms, median = 6.7728 ms, percentile(90%) = 6.77979 ms, percentile(95%) = 6.78345 ms, percentile(99%) = 6.78882 ms
 [09/02/2025-18:44:08] [I] GPU Compute Time: min = 11.6428 ms, max = 17.6765 ms, mean = 12.1001 ms, median = 11.8583 ms, percentile(90%) = 12.2859 ms, percentile(95%) = 12.3678 ms, percentile(99%) = 17.6723 ms
 [09/02/2025-18:44:08] [I] D2H Latency: min = 4.03442 ms, max = 4.16797 ms, mean = 4.14439 ms, median = 4.14691 ms, percentile(90%)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[09/02/2025-19:47:56] [I] === Trace details ===
+[09/02/2025-19:47:56] [I] Trace averages of 10 runs:
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 15.5601 ms - Host latency: 26.3838 ms (enqueue 0.949657 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 14.0518 ms - Host latency: 24.8892 ms (enqueue 0.864416 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.6997 ms - Host latency: 24.5386 ms (enqueue 0.825217 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.6882 ms - Host latency: 24.5278 ms (enqueue 0.851898 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.7396 ms - Host latency: 24.5801 ms (enqueue 0.85885 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.6886 ms - Host latency: 24.5279 ms (enqueue 0.83916 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.735 ms - Host latency: 24.5747 ms (enqueue 0.896716 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.9485 ms - Host latency: 24.7948 ms (enqueue 1.07068 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 14.0508 ms - Host latency: 24.8968 ms (enqueue 1.0229 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.7523 ms - Host latency: 24.6057 ms (enqueue 1.10677 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.739 ms - Host latency: 24.5802 ms (enqueue 1.00106 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.8468 ms - Host latency: 24.6857 ms (enqueue 0.890552 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.8333 ms - Host latency: 24.6718 ms (enqueue 0.839343 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.8108 ms - Host latency: 24.6525 ms (enqueue 0.884302 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 14.0035 ms - Host latency: 24.8416 ms (enqueue 0.877197 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.9882 ms - Host latency: 24.8222 ms (enqueue 0.79502 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.8921 ms - Host latency: 24.7266 ms (enqueue 0.819336 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.8101 ms - Host latency: 24.6513 ms (enqueue 0.886719 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.8582 ms - Host latency: 24.6974 ms (enqueue 0.869409 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.845 ms - Host latency: 24.6818 ms (enqueue 0.866309 ms)
+[09/02/2025-19:47:56] [I] Average on 10 runs - GPU latency: 13.8224 ms - Host latency: 24.6628 ms (enqueue 0.862598 ms)
+[09/02/2025-19:47:56] [I] 
+[09/02/2025-19:47:56] [I] === Performance summary ===
+[09/02/2025-19:47:56] [I] Throughput: 71.3456 qps
+[09/02/2025-19:47:56] [I] Latency: min = 24.3962 ms, max = 31.0309 ms, mean = 24.7604 ms, median = 24.6741 ms, percentile(90%) = 24.9083 ms, percentile(95%) = 25.0825 ms, percentile(99%) = 25.9111 ms
+[09/02/2025-19:47:56] [I] Enqueue Time: min = 0.736572 ms, max = 1.86707 ms, mean = 0.898283 ms, median = 0.86377 ms, percentile(90%) = 0.991699 ms, percentile(95%) = 1.21057 ms, percentile(99%) = 1.36786 ms
+[09/02/2025-19:47:56] [I] H2D Latency: min = 6.7637 ms, max = 6.81177 ms, mean = 6.77635 ms, median = 6.77515 ms, percentile(90%) = 6.78235 ms, percentile(95%) = 6.78754 ms, percentile(99%) = 6.80042 ms
+[09/02/2025-19:47:56] [I] GPU Compute Time: min = 13.5906 ms, max = 20.2181 ms, mean = 13.9212 ms, median = 13.8342 ms, percentile(90%) = 14.0698 ms, percentile(95%) = 14.2562 ms, percentile(99%) = 15.0935 ms
+[09/02/2025-19:47:56] [I] D2H Latency: min = 4.03564 ms, max = 4.07367 ms, mean = 4.06291 ms, median = 4.06323 ms, percentile(90%) = 4.06732 ms, percentile(95%) = 4.06796 ms, percentile(99%) = 4.07227 ms
+[09/02/2025-19:47:56] [I] Total Host Walltime: 3.04153 s
+[09/02/2025-19:47:56] [I] Total GPU Compute Time: 3.0209 s
+[09/02/2025-19:47:56] [I] Explanations of the performance metrics are printed in the verbose logs.
+[09/02/2025-19:47:56] [V] 
+[09/02/2025-19:47:56] [V] === Explanations of the performance metrics ===
+[09/02/2025-19:47:56] [V] Total Host Walltime: the host walltime from when the first query (after warmups) is enqueued to when the last query is completed.
+[09/02/2025-19:47:56] [V] GPU Compute Time: the GPU latency to execute the kernels for a query.
+[09/02/2025-19:47:56] [V] Total GPU Compute Time: the summation of the GPU Compute Time of all the queries. If this is significantly shorter than Total Host Walltime, the GPU may be under-utilized because of host-side overheads or data transfers.
+[09/02/2025-19:47:56] [V] Throughput: the observed throughput computed by dividing the number of queries by the Total Host Walltime. If this is significantly lower than the reciprocal of GPU Compute Time, the GPU may be under-utilized because of host-side overheads or data transfers.
+[09/02/2025-19:47:56] [V] Enqueue Time: the host latency to enqueue a query. If this is longer than GPU Compute Time, the GPU may be under-utilized.
+[09/02/2025-19:47:56] [V] H2D Latency: the latency for host-to-device data transfers for input tensors of a single query.
+[09/02/2025-19:47:56] [V] D2H Latency: the latency for device-to-host data transfers for output tensors of a single query.
+[09/02/2025-19:47:56] [V] Latency: the summation of H2D Latency, GPU Compute Time, and D2H Latency. This is the latency to infer a single query.
+[09/02/2025-19:47:56] [I] 
+&&&& PASSED TensorRT.trtexec [TensorRT v8601] # trtexec --loadEngine=/home/ma-user/work/copy/files/video-deal-search/video-deal-service/weights/CP26classes_epoch_180_int8_bs10_640_1088_sp0.5.trt --verbose
