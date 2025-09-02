@@ -122,3 +122,26 @@ def attempt_load(weights, map_location=None):
               (_weight_quantizer): TensorQuantizer(8bit fake axis=0 amax=[0.0753, 5.8382](256) calibrator=MaxCalibrator scale=1.0 quant)
             )
             (act): SiLU(inplace=True)        
+
+
+
+
+                    model.model[-1].export = True  # YOLOv5 Detect 层导出标志
+        model.eval()
+        
+        dummy_input = torch.randn(1, 3, 640, 640).to(next(model.parameters()).device)
+        onnx_path = save_qat.replace(".pt", ".onnx")
+
+        export_onnx(model, onnx_path, 640)
+        print(f"Exported QAT ONNX model to {onnx_path}")     
+        
+
+
+
+        import tensorrt as trt
+        onnx = file.with_suffix(".onnx")
+
+        # LOGGER.info(f"\n{prefix} starting export with TensorRT {trt.__version__}...")
+        is_trt10 = int(trt.__version__.split(".")[0]) >= 10  # is TensorRT >= 10
+        assert onnx.exists(), f"failed to export ONNX file: {onnx}"
+        f = file.with_suffix(".engine")  # TensorRT engine file
