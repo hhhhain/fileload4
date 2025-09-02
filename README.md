@@ -17,3 +17,12 @@
       )
       (m): MaxPool2d(kernel_size=5, stride=1, padding=2, dilation=1, ceil_mode=False)
     )
+
+
+
+
+
+for m in model.modules():
+    if hasattr(m, '_weight_quantizer'):
+        amax = m._weight_quantizer.amax
+        m._weight_quantizer.amax = np.maximum(amax, 1e-8)  # 避免 0
