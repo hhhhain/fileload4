@@ -94,3 +94,7 @@ def attempt_load(weights, map_location=None):
         for k in ['names', 'stride']:
             setattr(model, k, getattr(model[-1], k))
         return model  # return ensemble
+
+
+
+        AttributeError: Can't get attribute 'DetectionModel' on <module 'models.yolo' from '/home/ma-user/work/yolov5_quant_sample-master/./models/yolo.py'>
