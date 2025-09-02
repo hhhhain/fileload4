@@ -1,147 +1,53 @@
-[09/02/2025-12:43:58] [E] [TRT] ModelImporter.cpp:771: While parsing node number 417 [QuantizeLinear -> "/model.9/cv2/conv/_weight_quantizer/QuantizeLinear_output_0"]:
-[09/02/2025-12:43:58] [E] [TRT] ModelImporter.cpp:772: --- Begin node ---
-[09/02/2025-12:43:58] [E] [TRT] ModelImporter.cpp:773: input: "model.9.cv2.conv.weight"
-input: "/model.9/cv2/conv/_weight_quantizer/Constant_output_0"
-input: "/model.9/cv2/conv/_weight_quantizer/Constant_1_output_0"
-output: "/model.9/cv2/conv/_weight_quantizer/QuantizeLinear_output_0"
-name: "/model.9/cv2/conv/_weight_quantizer/QuantizeLinear"
-op_type: "QuantizeLinear"
-attribute {
-  name: "axis"
-  i: 0
-  type: INT
-}
-
-[09/02/2025-12:43:58] [E] [TRT] ModelImporter.cpp:774: --- End node ---
-[09/02/2025-12:43:58] [E] [TRT] ModelImporter.cpp:777: ERROR: builtin_op_importers.cpp:1197 In function QuantDequantLinearHelper:
-[6] Assertion failed: scaleAllPositive && "Scale coefficients must all be positive"
-[09/02/2025-12:43:58] [E] Failed to parse onnx file
-[09/02/2025-12:43:58] [I] Finished parsing network model. Parse time: 0.230179
-[09/02/2025-12:43:58] [E] Parsing model failed
-[09/02/2025-12:43:58] [E] Failed to create engine from model or file.
-[09/02/2025-12:43:58] [E] Engine set up failed
-&&&& FAILED TensorRT.trtexec [TensorRT v8601] # trtexec --onnx=/home/ma-user/work/copy/yolov5_QAT-main/qat.onnx --saveEngine=/home/ma-user/work/copy/files/video-deal-search/video-deal-service/weights/CP26classes_epoch_180_int8_bs10_640_1088_from_exec.trt --int8 --workspace=1024000 --verbose
-
-
-
-
-
-
-
-import onnx
-import numpy as np
-
-model = onnx.load("qat.onnx")
-for node in model.graph.node:
-    if node.name.endswith("conv/_weight_quantizer/QuantizeLinear"):
-        print(node)
-for init in model.graph.initializer:
-    if "conv/_weight_quantizer/Constant_output_0" in init.name:
-        arr = onnx.numpy_helper.to_array(init)
-        print("scale:", arr.min(), arr.max(), arr[:10])
-
-
-
-
-
-
-
-
-
-import onnx_graphsurgeon as gs
-import numpy as np
-
-graph = gs.import_onnx(onnx.load("qat.onnx"))
-for tensor in graph.tensors().values():
-    if "conv/_weight_quantizer/Constant_output_0" in tensor.name:
-        arr = np.abs(tensor.values)
-        arr[arr == 0] = 1e-8
-        tensor.values = arr
-onnx.save(gs.export_onnx(graph), "qat_fixed.onnx")
-
-
-
-
-
-
-
-
-def attempt_load(weights, map_location=None):
-    # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
-    model = Ensemble()
-    for w in weights if isinstance(weights, list) else [weights]:
-        attempt_download(w)
-        ckpt = torch.load(w, map_location=map_location)  # load
-
-        # model.append(ckpt['ema' if ckpt.get('ema') else 'model'].float().fuse().eval())  # FP32 model
-
-        # Modified by maggie.
-        # 1. Since we benchmark the speed using TensorRT backend, so it is not necesary to fuse.
-        # 2. If fuse, the fuse_conv_and_bn function will be called, then the quant_nn.QuantConv2d will be replace by noraml Conv2d
-        model.append(ckpt['ema' if ckpt.get('ema') else 'model'].float().eval())
-
-    # Compatibility updates
-    for m in model.modules():
-        if type(m) in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU]:
-            m.inplace = True  # pytorch 1.7.0 compatibility
-        elif type(m) is Conv:
-            m._non_persistent_buffers_set = set()  # pytorch 1.6.0 compatibility
-
-    if len(model) == 1:
-        return model[-1]  # return model
-    else:
-        print('Ensemble created with %s\n' % weights)
-        for k in ['names', 'stride']:
-            setattr(model, k, getattr(model[-1], k))
-        return model  # return ensemble
-
-
-
-        AttributeError: Can't get attribute 'DetectionModel' on <module 'models.yolo' from '/home/ma-user/work/yolov5_quant_sample-master/./models/yolo.py'>
-
-
-
-
-
-
-
- (m): Sequential(
-        (0): Bottleneck(
-          (cv1): Conv(
-            (conv): QuantConv2d(
-              256, 256, kernel_size=(1, 1), stride=(1, 1)
-              (_input_quantizer): TensorQuantizer(8bit fake per-tensor amax=19.4982 calibrator=HistogramCalibrator scale=1.0 quant)
-              (_weight_quantizer): TensorQuantizer(8bit fake axis=0 amax=[0.1208, 1.4473](256) calibrator=MaxCalibrator scale=1.0 quant)
-            )
-            (act): SiLU(inplace=True)
-          )
-          (cv2): Conv(
-            (conv): QuantConv2d(
-              256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)
-              (_input_quantizer): TensorQuantizer(8bit fake per-tensor amax=8.6930 calibrator=HistogramCalibrator scale=1.0 quant)
-              (_weight_quantizer): TensorQuantizer(8bit fake axis=0 amax=[0.0753, 5.8382](256) calibrator=MaxCalibrator scale=1.0 quant)
-            )
-            (act): SiLU(inplace=True)        
-
-
-
-
-                    model.model[-1].export = True  # YOLOv5 Detect 层导出标志
-        model.eval()
-        
-        dummy_input = torch.randn(1, 3, 640, 640).to(next(model.parameters()).device)
-        onnx_path = save_qat.replace(".pt", ".onnx")
-
-        export_onnx(model, onnx_path, 640)
-        print(f"Exported QAT ONNX model to {onnx_path}")     
-        
-
-
-
         import tensorrt as trt
-        onnx = file.with_suffix(".onnx")
+        onnx_file = Path(onnx_path)
 
         # LOGGER.info(f"\n{prefix} starting export with TensorRT {trt.__version__}...")
         is_trt10 = int(trt.__version__.split(".")[0]) >= 10  # is TensorRT >= 10
-        assert onnx.exists(), f"failed to export ONNX file: {onnx}"
-        f = file.with_suffix(".engine")  # TensorRT engine file
+        assert onnx_file.exists(), f"failed to export ONNX file: {onnx_file}"
+        f = onnx_file.with_suffix(".engine")  # TensorRT engine file
+        logger = trt.Logger(trt.Logger.INFO)
+        # if verbose:
+        #     logger.min_severity = trt.Logger.Severity.VERBOSE
+
+        builder = trt.Builder(logger)
+        config = builder.create_builder_config()
+        if is_trt10:
+            config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE, 4 << 30)
+        else:  # TensorRT versions 7, 8
+            config.max_workspace_size = 4 * 1 << 30
+        # if cache:  # enable timing cache
+        #     Path(cache).parent.mkdir(parents=True, exist_ok=True)
+        #     buf = Path(cache).read_bytes() if Path(cache).exists() else b""
+        #     timing_cache = config.create_timing_cache(buf)
+        #     config.set_timing_cache(timing_cache, ignore_mismatch=True)
+        flag = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+        network = builder.create_network(flag)
+        parser = trt.OnnxParser(network, logger)
+        if not parser.parse_from_file(str(onnx_file)):
+            raise RuntimeError(f"failed to load ONNX file: {onnx_file}")
+
+        inputs = [network.get_input(i) for i in range(network.num_inputs)]
+        outputs = [network.get_output(i) for i in range(network.num_outputs)]
+        for inp in inputs:
+            LOGGER.info(f'input "{inp.name}" with shape{inp.shape} {inp.dtype}')
+        for out in outputs:
+            LOGGER.info(f' output "{out.name}" with shape{out.shape} {out.dtype}')
+
+        if dynamic:
+            if im.shape[0] <= 1:
+                LOGGER.warning(f"{prefix} WARNING ⚠️ --dynamic model requires maximum --batch-size argument")
+            profile = builder.create_optimization_profile()
+            for inp in inputs:
+                profile.set_shape(inp.name, (1, *im.shape[1:]), (max(1, im.shape[0] // 2), *im.shape[1:]), im.shape)
+            config.add_optimization_profile(profile)
+
+        LOGGER.info(f"{prefix} building FP{16 if builder.platform_has_fast_fp16 and half else 32} engine as {f}")
+        if builder.platform_has_fast_fp16 and half:
+            config.set_flag(trt.BuilderFlag.FP16)
+
+        build = builder.build_serialized_network if is_trt10 else builder.build_engine
+        with build(network, config) as engine, open(f, "wb") as t:
+            t.write(engine if is_trt10 else engine.serialize())
+        if cache:  # save timing cache
+            with open(cache, "wb") as c:
+                c.write(config.get_timing_cache().serialize())
