@@ -98,3 +98,27 @@ def attempt_load(weights, map_location=None):
 
 
         AttributeError: Can't get attribute 'DetectionModel' on <module 'models.yolo' from '/home/ma-user/work/yolov5_quant_sample-master/./models/yolo.py'>
+
+
+
+
+
+
+
+ (m): Sequential(
+        (0): Bottleneck(
+          (cv1): Conv(
+            (conv): QuantConv2d(
+              256, 256, kernel_size=(1, 1), stride=(1, 1)
+              (_input_quantizer): TensorQuantizer(8bit fake per-tensor amax=19.4982 calibrator=HistogramCalibrator scale=1.0 quant)
+              (_weight_quantizer): TensorQuantizer(8bit fake axis=0 amax=[0.1208, 1.4473](256) calibrator=MaxCalibrator scale=1.0 quant)
+            )
+            (act): SiLU(inplace=True)
+          )
+          (cv2): Conv(
+            (conv): QuantConv2d(
+              256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)
+              (_input_quantizer): TensorQuantizer(8bit fake per-tensor amax=8.6930 calibrator=HistogramCalibrator scale=1.0 quant)
+              (_weight_quantizer): TensorQuantizer(8bit fake axis=0 amax=[0.0753, 5.8382](256) calibrator=MaxCalibrator scale=1.0 quant)
+            )
+            (act): SiLU(inplace=True)        
