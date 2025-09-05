@@ -1,60 +1,51 @@
-#include <cuda_runtime.h>
-#include <NvInfer.h>
-using namespace nvinfer1;
+cmake_minimum_required(VERSION 3.18)
+project(AddOnePlugin LANGUAGES CXX CUDA)
 
-class AddOnePlugin : public IPluginV2DynamicExt {
-public:
-    AddOnePlugin() {}
-    AddOnePlugin(const void* data, size_t length) {}
-    
-    int getNbOutputs() const noexcept override { return 2; }  // 原始 + 加1
-    DimsExprs getOutputDimensions(int outputIndex, const DimsExprs* inputs, int nbInputs, IExprBuilder& exprBuilder) noexcept override {
-        return inputs[0];  // 输出 shape = 输入 shape
-    }
-    
-    int initialize() noexcept override { return 0; }
-    void terminate() noexcept override {}
-    size_t getWorkspaceSize(const PluginTensorDesc* inputs, int nbInputs, const PluginTensorDesc* outputs, int nbOutputs) const noexcept override { return 0; }
-    
-    void enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
-                 const void* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream) noexcept override;
-    
-    const char* getPluginType() const noexcept override { return "AddOnePlugin"; }
-    const char* getPluginVersion() const noexcept override { return "1"; }
-    IPluginV2DynamicExt* clone() const noexcept override { return new AddOnePlugin(); }
-    void destroy() noexcept override { delete this; }
-    size_t getSerializationSize() const noexcept override { return 0; }
-    void serialize(void* buffer) const noexcept override {}
-    bool supportsFormatCombination(int pos, const PluginTensorDesc* inOut, int nbInputs, int nbOutputs) noexcept override {
-        return inOut[pos].type == DataType::kFLOAT && inOut[pos].format == TensorFormat::kLINEAR;
-    }
-    DataType getOutputDataType(int index, const DataType* inputTypes, int nbInputs) const noexcept override {
-        return inputTypes[0];
-    }
-    void configurePlugin(const DynamicPluginTensorDesc* in, int nbInputs,
-                         const DynamicPluginTensorDesc* out, int nbOutputs) noexcept override {}
-};
+# TensorRT 安装路径
+set(TENSORRT_ROOT /usr/local/TensorRT)  # 修改为你实际路径
 
-// CUDA kernel
-__global__ void addOneKernel(const float* input, float* output1, int size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        output1[idx] = input[idx] + 1.0f;
-    }
-}
+# 指定 C++ 标准
+set(CMAKE_CXX_STANDARD 14)
 
-void AddOnePlugin::enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
-                           const void* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream) noexcept
-{
-    int volume = 1;
-    for (int i = 0; i < inputDesc[0].dims.nbDims; i++)
-        volume *= inputDesc[0].dims.d[i];
+# CUDA 编译选项
+set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-    // output0 = 原始 input
-    cudaMemcpyAsync(outputs[0], inputs[0], volume * sizeof(float), cudaMemcpyDeviceToDevice, stream);
+# 包含目录
+include_directories(
+    ${TENSORRT_ROOT}/include
+    /usr/local/cuda/include
+)
 
-    // output1 = input + 1
-    int threads = 256;
-    int blocks = (volume + threads - 1) / threads;
-    addOneKernel<<<blocks, threads, 0, stream>>>((const float*)inputs[0], (float*)outputs[1], volume);
-}
+# 库目录
+link_directories(
+    ${TENSORRT_ROOT}/lib
+)
+
+# 编译动态库
+add_library(AddOnePlugin SHARED AddOnePlugin.cu)
+
+# 链接 TensorRT 和 CUDA 库
+target_link_libraries(AddOnePlugin
+    nvinfer
+    nvinfer_plugin
+    cudart
+)
+
+
+
+
+
+auto creator = getPluginRegistry()->getPluginCreator("AddOnePlugin", "1");
+PluginFieldCollection fc{};
+IPluginV2* plugin = creator->createPlugin("addone", &fc);
+
+// 假设 input_tensor 是 engine 原始输出
+ITensor* inputTensors[] = { input_tensor };
+auto addone_layer = network->addPluginV2(inputTensors, 1, *plugin);
+
+// 输出两个 tensor
+addone_layer->getOutput(0)->setName("output0");  // 原始
+addone_layer->getOutput(1)->setName("output1");  // +1
+network->markOutput(*addone_layer->getOutput(0));
+network->markOutput(*addone_layer->getOutput(1));
