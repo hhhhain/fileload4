@@ -1,102 +1,60 @@
-/home/ma-user/work/myplugin/MyAddPlugin.cu(5): error: expected an identifier
-  class AddOnePlugin : public IPluginV2DynamicExt {
-  ^
+#include <cuda_runtime.h>
+#include <NvInfer.h>
+using namespace nvinfer1;
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(6): error: expected an expression
-  public:
-  ^
+class AddOnePlugin : public IPluginV2DynamicExt {
+public:
+    AddOnePlugin() {}
+    AddOnePlugin(const void* data, size_t length) {}
+    
+    int getNbOutputs() const { return 2; }  // 原始 + 加1
+    DimsExprs getOutputDimensions(int outputIndex, const DimsExprs* inputs, int nbInputs, IExprBuilder& exprBuilder) {
+        return inputs[0];  // 输出 shape = 输入 shape
+    }
+    
+    int initialize() { return 0; }
+    void terminate() {}
+    size_t getWorkspaceSize(const PluginTensorDesc* inputs, int nbInputs, const PluginTensorDesc* outputs, int nbOutputs) const { return 0; }
+    
+    void enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
+                 const void* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream);
+    
+    const char* getPluginType() const { return "AddOnePlugin"; }
+    const char* getPluginVersion() const { return "1"; }
+    IPluginV2DynamicExt* clone() const { return new AddOnePlugin(); }
+    void destroy() { delete this; }
+    size_t getSerializationSize() const { return 0; }
+    void serialize(void* buffer) const {}
+    bool supportsFormatCombination(int pos, const PluginTensorDesc* inOut, int nbInputs, int nbOutputs) {
+        return inOut[pos].type == DataType::kFLOAT && inOut[pos].format == TensorFormat::kLINEAR;
+    }
+    DataType getOutputDataType(int index, const DataType* inputTypes, int nbInputs) const {
+        return inputTypes[0];
+    }
+    void configurePlugin(const DynamicPluginTensorDesc* in, int nbInputs,
+                         const DynamicPluginTensorDesc* out, int nbOutputs) {}
+};
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(22): warning #12-D: parsing restarts here after previous syntax error
-                   const void* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream) noexcept override;
-                                                                                                                           ^
+// CUDA kernel
+__global__ void addOneKernel(const float* input, float* output1, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        output1[idx] = input[idx] + 1.0f;
+    }
+}
 
-Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+void AddOnePlugin::enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
+                           const void* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream)
+{
+    int volume = 1;
+    for (int i = 0; i < inputDesc[0].dims.nbDims; i++)
+        volume *= inputDesc[0].dims.d[i];
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(22): error: expected a "}"
-                   const void* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream) noexcept override;
-                                                                                                                           ^
+    // output0 = 原始 input
+    cudaMemcpyAsync(outputs[0], inputs[0], volume * sizeof(float), cudaMemcpyDeviceToDevice, stream);
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(24): error: a type qualifier is not allowed on a nonmember function
-      const char* getPluginType() const noexcept override { return "AddOnePlugin"; }
-                                  ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(24): error: expected a "{"
-      const char* getPluginType() const noexcept override { return "AddOnePlugin"; }
-                                                 ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(25): error: a type qualifier is not allowed on a nonmember function
-      const char* getPluginVersion() const noexcept override { return "1"; }
-                                     ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(25): error: expected a "{"
-      const char* getPluginVersion() const noexcept override { return "1"; }
-                                                    ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(26): error: a type qualifier is not allowed on a nonmember function
-      IPluginV2DynamicExt* clone() const noexcept override { return new AddOnePlugin(); }
-                                   ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(26): error: expected a "{"
-      IPluginV2DynamicExt* clone() const noexcept override { return new AddOnePlugin(); }
-                                                  ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(26): error: expected a type specifier
-      IPluginV2DynamicExt* clone() const noexcept override { return new AddOnePlugin(); }
-                                                                        ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(27): error: expected a "{"
-      void destroy() noexcept override { delete this; }
-                              ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(27): error: "this" may only be used inside a nonstatic member function
-      void destroy() noexcept override { delete this; }
-                                                ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(28): error: a type qualifier is not allowed on a nonmember function
-      size_t getSerializationSize() const noexcept override { return 0; }
-                                    ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(28): error: expected a "{"
-      size_t getSerializationSize() const noexcept override { return 0; }
-                                                   ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(29): error: a type qualifier is not allowed on a nonmember function
-      void serialize(void* buffer) const noexcept override {}
-                                   ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(29): error: expected a "{"
-      void serialize(void* buffer) const noexcept override {}
-                                                  ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(30): error: expected a "{"
-      bool supportsFormatCombination(int pos, const PluginTensorDesc* inOut, int nbInputs, int nbOutputs) noexcept override {
-                                                                                                                   ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(33): error: a type qualifier is not allowed on a nonmember function
-      DataType getOutputDataType(int index, const DataType* inputTypes, int nbInputs) const noexcept override {
-                                                                                      ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(33): error: expected a "{"
-      DataType getOutputDataType(int index, const DataType* inputTypes, int nbInputs) const noexcept override {
-                                                                                                     ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(37): error: expected a "{"
-                           const DynamicPluginTensorDesc* out, int nbOutputs) noexcept override {}
-                                                                                       ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(38): error: expected a declaration
-  };
-  ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(48): error: incomplete type is not allowed
-  void AddOnePlugin::enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
-       ^
-
-/home/ma-user/work/myplugin/MyAddPlugin.cu(48): error: expected a ";"
-  void AddOnePlugin::enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
-                   ^
-
-23 errors detected in the compilation of "/home/ma-user/work/myplugin/MyAddPlugin.cu".
-make[2]: *** [CMakeFiles/AddOnePlugin.dir/build.make:76: CMakeFiles/AddOnePlugin.dir/MyAddPlugin.cu.o] Error 2
-make[1]: *** [CMakeFiles/Makefile2:83: CMakeFiles/AddOnePlugin.dir/all] Error 2
-make: *** [Makefile:91: all] Error 2
+    // output1 = input + 1
+    int threads = 256;
+    int blocks = (volume + threads - 1) / threads;
+    addOneKernel<<<blocks, threads, 0, stream>>>((const float*)inputs[0], (float*)outputs[1], volume);
+}
