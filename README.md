@@ -1,51 +1,102 @@
-cmake_minimum_required(VERSION 3.18)
-project(AddOnePlugin LANGUAGES CXX CUDA)
+/home/ma-user/work/myplugin/MyAddPlugin.cu(5): error: expected an identifier
+  class AddOnePlugin : public IPluginV2DynamicExt {
+  ^
 
-# TensorRT 安装路径
-set(TENSORRT_ROOT /usr/local/TensorRT)  # 修改为你实际路径
+/home/ma-user/work/myplugin/MyAddPlugin.cu(6): error: expected an expression
+  public:
+  ^
 
-# 指定 C++ 标准
-set(CMAKE_CXX_STANDARD 14)
+/home/ma-user/work/myplugin/MyAddPlugin.cu(22): warning #12-D: parsing restarts here after previous syntax error
+                   const void* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream) noexcept override;
+                                                                                                                           ^
 
-# CUDA 编译选项
-set(CMAKE_CUDA_STANDARD 14)
-set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
 
-# 包含目录
-include_directories(
-    ${TENSORRT_ROOT}/include
-    /usr/local/cuda/include
-)
+/home/ma-user/work/myplugin/MyAddPlugin.cu(22): error: expected a "}"
+                   const void* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream) noexcept override;
+                                                                                                                           ^
 
-# 库目录
-link_directories(
-    ${TENSORRT_ROOT}/lib
-)
+/home/ma-user/work/myplugin/MyAddPlugin.cu(24): error: a type qualifier is not allowed on a nonmember function
+      const char* getPluginType() const noexcept override { return "AddOnePlugin"; }
+                                  ^
 
-# 编译动态库
-add_library(AddOnePlugin SHARED AddOnePlugin.cu)
+/home/ma-user/work/myplugin/MyAddPlugin.cu(24): error: expected a "{"
+      const char* getPluginType() const noexcept override { return "AddOnePlugin"; }
+                                                 ^
 
-# 链接 TensorRT 和 CUDA 库
-target_link_libraries(AddOnePlugin
-    nvinfer
-    nvinfer_plugin
-    cudart
-)
+/home/ma-user/work/myplugin/MyAddPlugin.cu(25): error: a type qualifier is not allowed on a nonmember function
+      const char* getPluginVersion() const noexcept override { return "1"; }
+                                     ^
 
+/home/ma-user/work/myplugin/MyAddPlugin.cu(25): error: expected a "{"
+      const char* getPluginVersion() const noexcept override { return "1"; }
+                                                    ^
 
+/home/ma-user/work/myplugin/MyAddPlugin.cu(26): error: a type qualifier is not allowed on a nonmember function
+      IPluginV2DynamicExt* clone() const noexcept override { return new AddOnePlugin(); }
+                                   ^
 
+/home/ma-user/work/myplugin/MyAddPlugin.cu(26): error: expected a "{"
+      IPluginV2DynamicExt* clone() const noexcept override { return new AddOnePlugin(); }
+                                                  ^
 
+/home/ma-user/work/myplugin/MyAddPlugin.cu(26): error: expected a type specifier
+      IPluginV2DynamicExt* clone() const noexcept override { return new AddOnePlugin(); }
+                                                                        ^
 
-auto creator = getPluginRegistry()->getPluginCreator("AddOnePlugin", "1");
-PluginFieldCollection fc{};
-IPluginV2* plugin = creator->createPlugin("addone", &fc);
+/home/ma-user/work/myplugin/MyAddPlugin.cu(27): error: expected a "{"
+      void destroy() noexcept override { delete this; }
+                              ^
 
-// 假设 input_tensor 是 engine 原始输出
-ITensor* inputTensors[] = { input_tensor };
-auto addone_layer = network->addPluginV2(inputTensors, 1, *plugin);
+/home/ma-user/work/myplugin/MyAddPlugin.cu(27): error: "this" may only be used inside a nonstatic member function
+      void destroy() noexcept override { delete this; }
+                                                ^
 
-// 输出两个 tensor
-addone_layer->getOutput(0)->setName("output0");  // 原始
-addone_layer->getOutput(1)->setName("output1");  // +1
-network->markOutput(*addone_layer->getOutput(0));
-network->markOutput(*addone_layer->getOutput(1));
+/home/ma-user/work/myplugin/MyAddPlugin.cu(28): error: a type qualifier is not allowed on a nonmember function
+      size_t getSerializationSize() const noexcept override { return 0; }
+                                    ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(28): error: expected a "{"
+      size_t getSerializationSize() const noexcept override { return 0; }
+                                                   ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(29): error: a type qualifier is not allowed on a nonmember function
+      void serialize(void* buffer) const noexcept override {}
+                                   ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(29): error: expected a "{"
+      void serialize(void* buffer) const noexcept override {}
+                                                  ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(30): error: expected a "{"
+      bool supportsFormatCombination(int pos, const PluginTensorDesc* inOut, int nbInputs, int nbOutputs) noexcept override {
+                                                                                                                   ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(33): error: a type qualifier is not allowed on a nonmember function
+      DataType getOutputDataType(int index, const DataType* inputTypes, int nbInputs) const noexcept override {
+                                                                                      ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(33): error: expected a "{"
+      DataType getOutputDataType(int index, const DataType* inputTypes, int nbInputs) const noexcept override {
+                                                                                                     ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(37): error: expected a "{"
+                           const DynamicPluginTensorDesc* out, int nbOutputs) noexcept override {}
+                                                                                       ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(38): error: expected a declaration
+  };
+  ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(48): error: incomplete type is not allowed
+  void AddOnePlugin::enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
+       ^
+
+/home/ma-user/work/myplugin/MyAddPlugin.cu(48): error: expected a ";"
+  void AddOnePlugin::enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
+                   ^
+
+23 errors detected in the compilation of "/home/ma-user/work/myplugin/MyAddPlugin.cu".
+make[2]: *** [CMakeFiles/AddOnePlugin.dir/build.make:76: CMakeFiles/AddOnePlugin.dir/MyAddPlugin.cu.o] Error 2
+make[1]: *** [CMakeFiles/Makefile2:83: CMakeFiles/AddOnePlugin.dir/all] Error 2
+make: *** [Makefile:91: all] Error 2
