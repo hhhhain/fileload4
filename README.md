@@ -1,97 +1,139 @@
-/home/ma-user/work/myplugin/MyAddPlugin.cu(19): error: return type is not identical to nor covariant with return type "int32_t" of overridden virtual function "nvinfer1::IPluginV2DynamicExt::enqueue"
-      void enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
-           ^
+// AddOnePlugin.cu
+#include <cuda_runtime.h>
+#include "NvInfer.h"
+#include "NvInferPlugin.h"
+#include <vector>
+#include <cstring>
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(11): warning #997-D: function "nvinfer1::IPluginV2::getOutputDimensions(int32_t, const nvinfer1::Dims *, int32_t)" is hidden by "AddOnePlugin::getOutputDimensions" -- virtual function override intended?
-      DimsExprs getOutputDimensions(int outputIndex, const DimsExprs* inputs, int nbInputs, IExprBuilder& exprBuilder) {
-                ^
+using namespace nvinfer1;
 
-Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+// ---------------- CUDA kernel ----------------
+__global__ void addOneKernel(const float* input, float* output1, int size)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) output1[idx] = input[idx] + 1.0f;
+}
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(17): warning #997-D: function "nvinfer1::IPluginV2::getWorkspaceSize(int32_t) const" is hidden by "AddOnePlugin::getWorkspaceSize" -- virtual function override intended?
-      size_t getWorkspaceSize(const PluginTensorDesc* inputs, int nbInputs, const PluginTensorDesc* outputs, int nbOutputs) const { return 0; }
-             ^
+// ---------------- Plugin implementation ----------------
+class AddOnePlugin : public IPluginV2DynamicExt
+{
+public:
+    AddOnePlugin() {}
+    AddOnePlugin(const void* /*data*/, size_t /*length*/) {}
+    ~AddOnePlugin() override = default;
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(19): warning #997-D: function "nvinfer1::IPluginV2::enqueue(int32_t, const void *const *, void *const *, void *, cudaStream_t)" is hidden by "AddOnePlugin::enqueue" -- virtual function override intended?
-      void enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
-           ^
+    // IPluginV2
+    int getNbOutputs() const noexcept override { return 2; } // two outputs
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(34): warning #997-D: function "nvinfer1::IPluginV2Ext::configurePlugin(const nvinfer1::Dims *, int32_t, const nvinfer1::Dims *, int32_t, const nvinfer1::DataType *, const nvinfer1::DataType *, const bool *, const bool *, nvinfer1::PluginFormat, int32_t)" is hidden by "AddOnePlugin::configurePlugin" -- virtual function override intended?
-      void configurePlugin(const DynamicPluginTensorDesc* in, int nbInputs,
-           ^
+    // IPluginV2DynamicExt
+    DimsExprs getOutputDimensions(int outputIndex, const DimsExprs* inputs, int nbInputs,
+                                  IExprBuilder& exprBuilder) noexcept override
+    {
+        // outputs have same dims as input
+        return inputs[0];
+    }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(24): error: object of abstract class type "AddOnePlugin" is not allowed:
-            pure virtual function "nvinfer1::IPluginV2DynamicExt::enqueue(const nvinfer1::PluginTensorDesc *, const nvinfer1::PluginTensorDesc *, const void *const *, void *const *, void *, cudaStream_t)" has no overrider
-            pure virtual function "nvinfer1::IPluginV2::setPluginNamespace" has no overrider
-            pure virtual function "nvinfer1::IPluginV2::getPluginNamespace" has no overrider
-      IPluginV2DynamicExt* clone() const { return new AddOnePlugin(); }
-                                                      ^
+    bool supportsFormatCombination(int pos, const PluginTensorDesc* inOut, int nbInputs, int nbOutputs) noexcept override
+    {
+        // require float linear for all tensors
+        return inOut[pos].type == DataType::kFLOAT && inOut[pos].format == TensorFormat::kLINEAR;
+    }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(34): error: exception specification for virtual function "AddOnePlugin::configurePlugin" is incompatible with that of overridden function "nvinfer1::IPluginV2DynamicExt::configurePlugin(const nvinfer1::DynamicPluginTensorDesc *, int32_t, const nvinfer1::DynamicPluginTensorDesc *, int32_t)"
-      void configurePlugin(const DynamicPluginTensorDesc* in, int nbInputs,
-           ^
+    void configurePlugin(const DynamicPluginTensorDesc* in, int nbInputs,
+                         const DynamicPluginTensorDesc* out, int nbOutputs) noexcept override
+    {
+        // nothing to configure for this minimal plugin
+    }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(31): error: exception specification for virtual function "AddOnePlugin::getOutputDataType" is incompatible with that of overridden function "nvinfer1::IPluginV2Ext::getOutputDataType"
-      DataType getOutputDataType(int index, const DataType* inputTypes, int nbInputs) const {
-               ^
+    size_t getWorkspaceSize(const PluginTensorDesc* inputs, int nbInputs,
+                            const PluginTensorDesc* outputs, int nbOutputs) const noexcept override
+    {
+        return 0;
+    }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(28): error: exception specification for virtual function "AddOnePlugin::supportsFormatCombination" is incompatible with that of overridden function "nvinfer1::IPluginV2DynamicExt::supportsFormatCombination"
-      bool supportsFormatCombination(int pos, const PluginTensorDesc* inOut, int nbInputs, int nbOutputs) {
-           ^
+    int enqueue(const PluginTensorDesc* inputDesc, const PluginTensorDesc* outputDesc,
+                const void* const* inputs, void* const* outputs, void* workspace, cudaStream_t stream) noexcept override
+    {
+        // compute number of elements in input tensor
+        int volume = 1;
+        for (int i = 0; i < inputDesc[0].dims.nbDims; ++i) volume *= inputDesc[0].dims.d[i];
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(27): error: exception specification for virtual function "AddOnePlugin::serialize" is incompatible with that of overridden function "nvinfer1::IPluginV2::serialize"
-      void serialize(void* buffer) const {}
-           ^
+        // copy input -> outputs[0] (device to device)
+        cudaError_t err = cudaMemcpyAsync(outputs[0], inputs[0], (size_t)volume * sizeof(float), cudaMemcpyDeviceToDevice, stream);
+        if (err != cudaSuccess) return -1;
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(26): error: exception specification for virtual function "AddOnePlugin::getSerializationSize" is incompatible with that of overridden function "nvinfer1::IPluginV2::getSerializationSize"
-      size_t getSerializationSize() const { return 0; }
-             ^
+        // launch kernel to compute outputs[1] = input + 1
+        const int threads = 256;
+        const int blocks = (volume + threads - 1) / threads;
+        addOneKernel<<<blocks, threads, 0, stream>>>((const float*)inputs[0], (float*)outputs[1], volume);
+        // optional: check kernel launch error (can't return cudaError_t directly)
+        err = cudaGetLastError();
+        if (err != cudaSuccess) return -2;
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(25): error: exception specification for virtual function "AddOnePlugin::destroy" is incompatible with that of overridden function "nvinfer1::IPluginV2::destroy"
-      void destroy() { delete this; }
-           ^
+        return 0;
+    }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(24): error: exception specification for virtual function "AddOnePlugin::clone" is incompatible with that of overridden function "nvinfer1::IPluginV2DynamicExt::clone"
-      IPluginV2DynamicExt* clone() const { return new AddOnePlugin(); }
-                           ^
+    // IPluginV2Ext / IPluginV2DynamicExt required methods
+    DataType getOutputDataType(int index, const DataType* inputTypes, int nbInputs) const noexcept override
+    {
+        return inputTypes[0];
+    }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(24): error: exception specification for virtual function "AddOnePlugin::clone" is incompatible with that of overridden function "nvinfer1::IPluginV2Ext::clone"
-      IPluginV2DynamicExt* clone() const { return new AddOnePlugin(); }
-                           ^
+    // lifecycle
+    int initialize() noexcept override { return 0; }
+    void terminate() noexcept override {}
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(24): error: exception specification for virtual function "AddOnePlugin::clone" is incompatible with that of overridden function "nvinfer1::IPluginV2::clone"
-      IPluginV2DynamicExt* clone() const { return new AddOnePlugin(); }
-                           ^
+    // serialization (none)
+    size_t getSerializationSize() const noexcept override { return 0; }
+    void serialize(void* /*buffer*/) const noexcept override {}
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(23): error: exception specification for virtual function "AddOnePlugin::getPluginVersion" is incompatible with that of overridden function "nvinfer1::IPluginV2::getPluginVersion"
-      const char* getPluginVersion() const { return "1"; }
-                  ^
+    void destroy() noexcept override { delete this; }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(22): error: exception specification for virtual function "AddOnePlugin::getPluginType" is incompatible with that of overridden function "nvinfer1::IPluginV2::getPluginType"
-      const char* getPluginType() const { return "AddOnePlugin"; }
-                  ^
+    IPluginV2DynamicExt* clone() const noexcept override { return new AddOnePlugin(); }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(17): error: exception specification for virtual function "AddOnePlugin::getWorkspaceSize" is incompatible with that of overridden function "nvinfer1::IPluginV2DynamicExt::getWorkspaceSize(const nvinfer1::PluginTensorDesc *, int32_t, const nvinfer1::PluginTensorDesc *, int32_t) const"
-      size_t getWorkspaceSize(const PluginTensorDesc* inputs, int nbInputs, const PluginTensorDesc* outputs, int nbOutputs) const { return 0; }
-             ^
+    // namespace
+    void setPluginNamespace(const char* libNamespace) noexcept override { mNamespace = libNamespace ? libNamespace : ""; }
+    const char* getPluginNamespace() const noexcept override { return mNamespace.c_str(); }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(16): error: exception specification for virtual function "AddOnePlugin::terminate" is incompatible with that of overridden function "nvinfer1::IPluginV2::terminate"
-      void terminate() {}
-           ^
+    // plugin identity
+    const char* getPluginType() const noexcept override { return "AddOnePlugin"; }
+    const char* getPluginVersion() const noexcept override { return "1"; }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(15): error: exception specification for virtual function "AddOnePlugin::initialize" is incompatible with that of overridden function "nvinfer1::IPluginV2::initialize"
-      int initialize() { return 0; }
-          ^
+private:
+    std::string mNamespace;
+};
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(11): error: exception specification for virtual function "AddOnePlugin::getOutputDimensions" is incompatible with that of overridden function "nvinfer1::IPluginV2DynamicExt::getOutputDimensions(int32_t, const nvinfer1::DimsExprs *, int32_t, nvinfer1::IExprBuilder &)"
-      DimsExprs getOutputDimensions(int outputIndex, const DimsExprs* inputs, int nbInputs, IExprBuilder& exprBuilder) {
-                ^
+// ---------------- Plugin Creator ----------------
+class AddOnePluginCreator : public IPluginCreator
+{
+public:
+    AddOnePluginCreator()
+    {
+        mFC.nbFields = 0;
+        mFC.fields = nullptr;
+    }
 
-/home/ma-user/work/myplugin/MyAddPlugin.cu(10): error: exception specification for virtual function "AddOnePlugin::getNbOutputs" is incompatible with that of overridden function "nvinfer1::IPluginV2::getNbOutputs"
-      int getNbOutputs() const { return 2; }
-          ^
+    const char* getPluginName() const noexcept override { return "AddOnePlugin"; }
+    const char* getPluginVersion() const noexcept override { return "1"; }
+    const PluginFieldCollection* getFieldNames() noexcept override { return &mFC; }
 
-18 errors detected in the compilation of "/home/ma-user/work/myplugin/MyAddPlugin.cu".
-make[2]: *** [CMakeFiles/AddOnePlugin.dir/build.make:76: CMakeFiles/AddOnePlugin.dir/MyAddPlugin.cu.o] Error 2
-make[1]: *** [CMakeFiles/Makefile2:83: CMakeFiles/AddOnePlugin.dir/all] Error 2
-make: *** [Makefile:91: all] Error 2
+    IPluginV2* createPlugin(const char* /*name*/, const PluginFieldCollection* /*fc*/) noexcept override
+    {
+        return new AddOnePlugin();
+    }
+
+    IPluginV2* deserializePlugin(const char* /*name*/, const void* serialData, size_t serialLength) noexcept override
+    {
+        return new AddOnePlugin(serialData, serialLength);
+    }
+
+    void setPluginNamespace(const char* libNamespace) noexcept override { mNamespace = libNamespace ? libNamespace : ""; }
+    const char* getPluginNamespace() const noexcept override { return mNamespace.c_str(); }
+
+private:
+    std::string mNamespace;
+    PluginFieldCollection mFC{};
+};
+
+// register plugin creator
+REGISTER_TENSORRT_PLUGIN(AddOnePluginCreator);
