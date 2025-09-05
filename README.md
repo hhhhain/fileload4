@@ -86,3 +86,67 @@ ICudaEngine* build_det_engine(unsigned int maxBatchSize, IBuilder* builder, IBui
 
   return engine;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int main(int argc, char** argv) {
+  cudaSetDevice(kGpuId);
+
+  std::string wts_name = "";
+  std::string engine_name = "";
+  bool is_p6 = false;
+  float gd = 0.0f, gw = 0.0f;
+  std::string img_dir;
+
+  if (!parse_args(argc, argv, wts_name, engine_name, is_p6, gd, gw, img_dir)) {
+    std::cerr << "arguments not right!" << std::endl;
+    std::cerr << "./yolov5_det -s [.wts] [.engine] [n/s/m/l/x/n6/s6/m6/l6/x6 or c/c6 gd gw]  // serialize model to plan file" << std::endl;
+    std::cerr << "./yolov5_det -d [.engine] ../images  // deserialize plan file and run inference" << std::endl;
+    return -1;
+  }
+
+  // Create a model using the API directly and serialize it to a file
+  if (!wts_name.empty()) {
+    serialize_engine(kBatchSize, is_p6, gd, gw, wts_name, engine_name);
+    return 0;
+  }
+
+  // Deserialize the engine from file
+  IRuntime* runtime = nullptr;
+  ICudaEngine* engine = nullptr;
+  IExecutionContext* context = nullptr;
+  deserialize_engine(engine_name, &runtime, &engine, &context);
+  cudaStream_t stream;
+  CUDA_CHECK(cudaStreamCreate(&stream));
+
+  // Init CUDA preprocessing
+  cuda_preprocess_init(kMaxInputImageSize);
+
+  // Prepare cpu and gpu buffers
+  float* gpu_buffers[2];
+  float* cpu_output_buffer = nullptr;
+  prepare_buffers(engine, &gpu_buffers[0], &gpu_buffers[1], &cpu_output_buffer);
+
+  // Read images from directory
+  std::vector<std::string> file_names;
+  if (read_files_in_dir(img_dir.c_str(), file_names) < 0) {
+    std::cerr << "read_files_in_dir failed." << std::endl;
+    return -1;
+  }
