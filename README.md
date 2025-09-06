@@ -1,3 +1,4 @@
+static IPluginV2Layer* addYoLoLayer(INetworkDefinition *network, std::map<std::string, Weights>& weightMap, std::string lname, std::vector<IConvolutionLayer*> dets, bool is_segmentation = false) {
   auto creator = getPluginRegistry()->getPluginCreator("YoloLayer_TRT", "1");
   auto anchors = getAnchors(weightMap, lname);
   PluginField plugin_fields[2];
@@ -45,3 +46,17 @@
   // addPluginV2是tensorrt内置的API, 看不到实现.
   auto yolo = network->addPluginV2(&input_tensors[0], input_tensors.size(), *plugin_obj);
   return yolo;
+}
+
+
+
+
+    concat_out = network.get_layer(293).get_output(0)
+    network.unmark_output(concat_out)
+
+    plugin_layer = network.add_plugin_v2([concat_out], plugin)
+    plugin_layer.get_output(0).name = "out_original"
+    plugin_layer.get_output(1).name = "out_plus_one"
+
+    network.mark_output(plugin_layer.get_output(0))
+    network.mark_output(plugin_layer.get_output(1))
