@@ -1,14 +1,8 @@
-static std::vector<std::vector<float>> getAnchors(std::map<std::string, Weights>& weightMap, std::string lname) {
-  std::vector<std::vector<float>> anchors;
-  Weights wts = weightMap[lname + ".anchor_grid"];
-  int anchor_len = kNumAnchor * 2;
-  for (int i = 0; i < wts.count / anchor_len; i++) {
-    auto *p = (const float*)wts.values + i * anchor_len;
-    std::vector<float> anchor(p, p + anchor_len);
-    anchors.push_back(anchor);
-  }
-  return anchors;
-}
+anchors = [
+    [10,13, 16,30, 33,23],       # s8
+    [30,61, 62,45, 59,119],      # s16
+    [116,90, 156,198, 373,326]   # s32
+]
 
 
 
