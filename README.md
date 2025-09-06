@@ -1,1 +1,6 @@
-    print(engine.get_binding_name(i), engine.get_binding_shape(i), engine.binding_is_input(i))
+images (10, 3, 640, 1088) True
+output0 (10, 42840, 31) False
+
+
+images (10, 3, 640, 1088) True
+output0 (10, 42840, 31) False
