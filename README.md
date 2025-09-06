@@ -1,62 +1,56 @@
-static IPluginV2Layer* addYoLoLayer(INetworkDefinition *network, std::map<std::string, Weights>& weightMap, std::string lname, std::vector<IConvolutionLayer*> dets, bool is_segmentation = false) {
-  auto creator = getPluginRegistry()->getPluginCreator("YoloLayer_TRT", "1");
-  auto anchors = getAnchors(weightMap, lname);
-  PluginField plugin_fields[2];
+import tensorrt as trt
+import numpy as np
 
-  // kNumClass, kInputW, kInputH, kMaxNumOutputBbox这几个参数在config.h头文件里宏定义.
-  int netinfo[5] = {kNumClass, kInputW, kInputH, kMaxNumOutputBbox, (int)is_segmentation};
-  plugin_fields[0].data = netinfo;
-  plugin_fields[0].length = 5;
-  plugin_fields[0].name = "netinfo";
-  plugin_fields[0].type = PluginFieldType::kFLOAT32;
+def add_yolo_layer(network, weight_map, lname, dets, is_segmentation=False):
+    # 1. 获取插件 creator
+    registry = trt.get_plugin_registry()
+    creator = registry.get_plugin_creator("YoloLayer_TRT", "1")
+    if creator is None:
+        raise RuntimeError("YoloLayer_TRT plugin not found in registry!")
 
-  //load strides from Detect layer
-  assert(weightMap.find(lname + ".strides") != weightMap.end() && "Not found `strides`, please check gen_wts.py!!!");
-  Weights strides = weightMap[lname + ".strides"];
-  auto *p = (const float*)(strides.values);
-  std::vector<int> scales(p, p + strides.count);
+    # 2. 构造 netinfo
+    netinfo = np.array(
+        [kNumClass, kInputW, kInputH, kMaxNumOutputBbox, int(is_segmentation)],
+        dtype=np.float32
+    )
+    netinfo_field = trt.PluginField(
+        name="netinfo",
+        data=netinfo,
+        type=trt.PluginFieldType.FLOAT32
+    )
 
-  std::vector<YoloKernel> kernels;
-  for (size_t i = 0; i < anchors.size(); i++) {
-    YoloKernel kernel;
-    kernel.width = kInputW / scales[i];
-    kernel.height = kInputH / scales[i];
-    memcpy(kernel.anchors, &anchors[i][0], anchors[i].size() * sizeof(float));
-    // push_back用来在vector末尾添加一个元素.
-    kernels.push_back(kernel);
-  }
-  plugin_fields[1].data = &kernels[0];
-  plugin_fields[1].length = kernels.size();
-  plugin_fields[1].name = "kernels";
-  plugin_fields[1].type = PluginFieldType::kFLOAT32;
-  PluginFieldCollection plugin_data;
-  plugin_data.nbFields = 2;
-  plugin_data.fields = plugin_fields;
-  
-  // 这里创建了具体的plugin实例.
-  IPluginV2 *plugin_obj = creator->createPlugin("yololayer", &plugin_data);
-  std::vector<ITensor*> input_tensors;
-  // 输入的定义,std::vector<IConvolutionLayer*> dets, dets是一个vector容器,容器里面每个元素是IConvolutionLayer*,指向三个输出卷积层的指针.为什么知道是输出的三个卷积层呢,这个函数被调用的地方有dets的具体赋值.
-  // 遍历dets,也就是每个输出层,一共3个
-  for (auto det: dets) {
-    // 获取输出卷积层的输出tensor,放进input_tensors.为什么叫input呢,因为是plugin的input. 必须要索引,不能().
-    input_tensors.push_back(det->getOutput(0));
-  }
-  // 调用addPluginV2把plugin_obj plugin实例插入网络.
-  // addPluginV2是tensorrt内置的API, 看不到实现.
-  auto yolo = network->addPluginV2(&input_tensors[0], input_tensors.size(), *plugin_obj);
-  return yolo;
-}
+    # 3. 加载 strides
+    if lname + ".strides" not in weight_map:
+        raise RuntimeError("Not found strides, please check gen_wts.py!!!")
+    strides = weight_map[lname + ".strides"]  # 这里通常是 Weights
+    scales = np.array(strides, dtype=np.float32)  # strides.values -> numpy
 
+    # 4. 构造 kernels
+    kernels = []
+    anchors = getAnchors(weight_map, lname)  # 需要你实现 getAnchors()
+    for i in range(len(anchors)):
+        w = kInputW / scales[i]
+        h = kInputH / scales[i]
+        # 一个 YoloKernel = (width, height, anchors)
+        kernel = [w, h] + anchors[i]
+        kernels.extend(kernel)
+    kernels = np.array(kernels, dtype=np.float32)
 
+    kernels_field = trt.PluginField(
+        name="kernels",
+        data=kernels,
+        type=trt.PluginFieldType.FLOAT32
+    )
 
+    # 5. 封装 PluginFieldCollection
+    field_collection = trt.PluginFieldCollection([netinfo_field, kernels_field])
 
-    concat_out = network.get_layer(293).get_output(0)
-    network.unmark_output(concat_out)
+    # 6. 创建 plugin
+    plugin_obj = creator.create_plugin("yololayer", field_collection)
 
-    plugin_layer = network.add_plugin_v2([concat_out], plugin)
-    plugin_layer.get_output(0).name = "out_original"
-    plugin_layer.get_output(1).name = "out_plus_one"
+    # 7. 收集 det 层输出作为输入
+    input_tensors = [det.get_output(0) for det in dets]
 
-    network.mark_output(plugin_layer.get_output(0))
-    network.mark_output(plugin_layer.get_output(1))
+    # 8. 插入 plugin
+    yolo_layer = network.add_plugin_v2(inputs=input_tensors, plugin=plugin_obj)
+    return yolo_layer
