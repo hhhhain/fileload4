@@ -1,11 +1,9 @@
-index=242, name=/model.24/Reshape_1, type=LayerType.SHUFFLE, nb_outputs=1
-  output[0] shape: (10, 32640, 31)
+concat_out = network.get_layer(293).get_output(0)
+network.unmark_output(concat_out)
 
-index=267, name=/model.24/Reshape_3, type=LayerType.SHUFFLE, nb_outputs=1
-  output[0] shape: (10, 8160, 31)
+plugin_layer = network.add_plugin_v2([concat_out], plugin)
+plugin_layer.get_output(0).name = "out_original"
+plugin_layer.get_output(1).name = "out_plus_one"
 
-index=292, name=/model.24/Reshape_5, type=LayerType.SHUFFLE, nb_outputs=1
-  output[0] shape: (10, 2040, 31)
-  
-index=293, name=/model.24/Concat_3, type=LayerType.CONCATENATION, nb_outputs=1
-  output[0] shape: (10, 42840, 31)
+network.mark_output(plugin_layer.get_output(0))
+network.mark_output(plugin_layer.get_output(1))
