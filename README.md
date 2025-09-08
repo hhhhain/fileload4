@@ -12,3 +12,30 @@ Dims YoloLayerPlugin::getOutputDimensions(int index, const Dims* inputs, int nbI
             << " -> return Dims3(" << (total_size + 1) << ", 1, 1)" 
             << std::endl;  
   return Dims3(total_size + 1, 1, 1);
+
+
+class Dims3 : public Dims2
+{
+public:
+    //!
+    //! \brief Construct an empty Dims3 object.
+    //!
+    Dims3()
+        : Dims3(0, 0, 0)
+    {
+    }
+
+    //!
+    //! \brief Construct a Dims3 from 3 elements.
+    //!
+    //! \param d0 The first element.
+    //! \param d1 The second element.
+    //! \param d2 The third element.
+    //!
+    Dims3(int32_t d0, int32_t d1, int32_t d2)
+        : Dims2(d0, d1)
+    {
+        nbDims = 3;
+        d[2] = d2;
+    }
+};
