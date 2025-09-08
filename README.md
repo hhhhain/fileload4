@@ -1,31 +1,33 @@
-void YoloLayerPlugin::serialize(void* buffer) const TRT_NOEXCEPT {  
-  using namespace Tn;
-  char* d = static_cast<char*>(buffer), *a = d;
-  write(d, mClassCount);
-  write(d, mThreadCount);
-  write(d, mKernelCount); // 比如mKernelCount为3，有3个头    1
-  write(d, mYoloV5NetWidth);
-  write(d, mYoloV5NetHeight);
-  write(d, mMaxOutObject);
-  write(d, is_segmentation_);
-  auto kernelSize = mKernelCount * sizeof(YoloKernel);
-  memcpy(d, mYoloKernel.data(), kernelSize);
-  d += kernelSize; // 同理。
-
-  assert(d == a + getSerializationSize()); // 同理，用下面的函数计算，是否相等。
-
-
-  printf("mThreadCount is %d\n", mThreadCount);    
-  printf("mMaxOutObject is %d\n", mMaxOutObject);  
-  printf("mKernelCount is %d\n", mKernelCount);
-  printf("mYoloV5NetWidth is %d\n", mYoloV5NetWidth);  
-  printf("mYoloV5NetHeight is %d\n", mYoloV5NetHeight);   
-  printf("mClassCount is %d\n", mClassCount);     
-  exit(0);
-我得到的输出：
-  mThreadCount is 256
+反序列号之后我又一次读了，发现结果还是正确的。
+mThreadCount is 256
 mMaxOutObject is 1000
 mKernelCount is 24
 mYoloV5NetWidth is 640
 mYoloV5NetHeight is 1088
 mClassCount is 26
+
+反序列化的代码：
+IPluginV2IOExt* YoloPluginCreator::deserializePlugin(const char* name, const void* serialData, size_t serialLength) TRT_NOEXCEPT {
+  // This object will be deleted when the network is destroyed, which will
+  // call YoloLayerPlugin::destroy()
+  YoloLayerPlugin* obj = new YoloLayerPlugin(serialData, serialLength);
+  obj->setPluginNamespace(mNamespace.c_str());
+  return obj;
+}
+会不会跟setPluginNamespace有关？
+
+接下来是执行enqueue吗？
+int YoloLayerPlugin::enqueue(int batchSize, const void* const* inputs, void* TRT_CONST_ENQUEUE* outputs, void* workspace, cudaStream_t stream) TRT_NOEXCEPT {
+  forwardGpu((const float* const*)inputs, (float*)outputs[0], stream, batchSize);
+  return 0;
+}
+然后我在forwardgpu里面打印就不对了，但是我发现了一些规律，有些错 有些对：
+mThreadCount is 0
+mMaxOutObject is 1000
+numElem is 0
+mYoloV5NetWidth is 640
+mYoloV5NetHeight is 1088
+yolo.width is 1117782016
+yolo.height is 1124597760
+mClassCount is 26
+outputElem is 38001
