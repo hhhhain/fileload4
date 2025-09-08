@@ -1,23 +1,56 @@
-anchors = [
-    [10,13, 16,30, 33,23],       # s8
-    [30,61, 62,45, 59,119],      # s16
-    [116,90, 156,198, 373,326]   # s32
-]
+import tensorrt as trt
+import numpy as np
 
+def add_yolo_layer(network, weight_map, lname, dets, is_segmentation=False):
+    # 1. 获取插件 creator
+    registry = trt.get_plugin_registry()
+    creator = registry.get_plugin_creator("YoloLayer_TRT", "1")
+    if creator is None:
+        raise RuntimeError("YoloLayer_TRT plugin not found in registry!")
 
+    # 2. 构造 netinfo
+    netinfo = np.array(
+        [kNumClass, kInputW, kInputH, kMaxNumOutputBbox, int(is_segmentation)],
+        dtype=np.float32
+    )
+    netinfo_field = trt.PluginField(
+        name="netinfo",
+        data=netinfo,
+        type=trt.PluginFieldType.FLOAT32
+    )
 
+    # 3. 加载 strides
+    if lname + ".strides" not in weight_map:
+        raise RuntimeError("Not found strides, please check gen_wts.py!!!")
+    strides = weight_map[lname + ".strides"]  # 这里通常是 Weights
+    scales = np.array(strides, dtype=np.float32)  # strides.values -> numpy
 
+    # 4. 构造 kernels
+    kernels = []
+    anchors = getAnchors(weight_map, lname)  # 需要你实现 getAnchors()
+    for i in range(len(anchors)):
+        w = kInputW / scales[i]
+        h = kInputH / scales[i]
+        # 一个 YoloKernel = (width, height, anchors)
+        kernel = [w, h] + anchors[i]
+        kernels.extend(kernel)
+    kernels = np.array(kernels, dtype=np.float32)
 
+    kernels_field = trt.PluginField(
+        name="kernels",
+        data=kernels,
+        type=trt.PluginFieldType.FLOAT32
+    )
 
+    # 5. 封装 PluginFieldCollection
+    field_collection = trt.PluginFieldCollection([netinfo_field, kernels_field])
 
-# 假设 det0, det1, det2 是 IConvolutionLayer 的对象（或直接是 ITensor）
-# 如果是 IConvolutionLayer，则传 det->get_output(0)，如果已经是 ITensor 则直接用
-det_tensors = [det0.get_output(0), det1.get_output(0), det2.get_output(0)]
-yolo_layer = add_yolo_layer_py(network, weight_map, "model.24", det_tensors=det_tensors, is_segmentation=False)
+    # 6. 创建 plugin
+    plugin_obj = creator.create_plugin("yololayer", field_collection)
 
+    # 7. 收集 det 层输出作为输入
+    input_tensors = [det.get_output(0) for det in dets]
 
-
-或者：
-# 你之前查看到 concat 层 index 为 293
-yolo_layer = add_yolo_layer_py(network, weight_map, "model.24", concat_layer_index=293, is_segmentation=False)
-
+    # 8. 插入 plugin
+    yolo_layer = network.add_plugin_v2(inputs=input_tensors, plugin=plugin_obj)
+    return yolo_layer
