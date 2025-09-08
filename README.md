@@ -1,53 +1,85 @@
-cmake_minimum_required(VERSION 3.10)
+    det1 = network.get_layer(242).get_output(0)
+    det2 = network.get_layer(267).get_output(0)
+    det3 = network.get_layer(292).get_output(0)
+    add_yolo_layer_py(network, det_tensors=[det1,det2,det3], concat_layer_index=293, is_segmentation=False)
 
-project(yolov5)
 
-add_definitions(-std=c++11)
-add_definitions(-DAPI_EXPORTS)
-option(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_BUILD_TYPE Debug)
+    def add_yolo_layer_py(network, det_tensors=None, concat_layer_index=None, is_segmentation=False):
+    """
+    - network: trt.INetworkDefinition
+    - weight_map: 你的权重字典（用于 getAnchors/get strides）
+    - lname: e.g. "model.24"
+    - det_tensors: 列表 of ITensor (三个 detection head 的输出), 优先使用这个
+    - concat_layer_index: 如果你想直接处理 concat 层，传该 layer index（int）
+    - 返回: 插入的 plugin layer (ILayer)
+    """
+    kMaxNumOutputBbox = 1000
+    kNumClass = 26
+    kInputW = 640
+    kInputH = 1088
+    is_segmentation = 0
 
-# TODO(Call for PR): make cmake compatible with Windows
-set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
-enable_language(CUDA)
+    # 1) 确保插件库被加载并初始化（在外部只需做一次也可以）
+    # 2) 获取 Creator
+    registry = trt.get_plugin_registry()
+    creator = registry.get_plugin_creator("YoloLayer_TRT", "1", "")
+    if creator is None:
+        raise RuntimeError("YoloLayer_TRT plugin not found in registry! Did you load the plugin .so and call init_libnvinfer_plugins?")
 
-# include and link dirs of cuda and tensorrt, you need adapt them if yours are different
-# cuda
-include_directories(/usr/local/cuda/include)
-link_directories(/usr/local/cuda/lib64)
-# tensorrt
-# TODO(Call for PR): make TRT path configurable from command line
-include_directories(/home/nvidia/TensorRT-8.2.5.1/include/)
-link_directories(/home/nvidia/TensorRT-8.2.5.1/lib/)
+    # 3) 准备 netinfo
+    # 注意：C++ createPlugin 里通常会把字段 reinterpret_cast 成 int* 或 float*
+    # 根据你 plugin 的实现把类型对齐——这里用 int32（C++ 中通常读取为 int）
+    netinfo = np.array([kNumClass, kInputW, kInputH, kMaxNumOutputBbox, int(is_segmentation)], dtype=np.int32)
+    f_netinfo = trt.PluginField("netinfo", netinfo, trt.PluginFieldType.INT32)
 
-include_directories(${PROJECT_SOURCE_DIR}/src/)
-include_directories(${PROJECT_SOURCE_DIR}/plugin/)
-file(GLOB_RECURSE SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/src/*.cu)
-file(GLOB_RECURSE PLUGIN_SRCS ${PROJECT_SOURCE_DIR}/plugin/*.cu)
+    # 4) 获取scales
+    scales = np.array([8, 16, 32], dtype=np.float32)
 
-add_library(myplugins SHARED ${PLUGIN_SRCS})
-target_link_libraries(myplugins nvinfer cudart)
+    # 5) 构造 kernels 内容 —— 必须与 C++ 插件期望的内存布局一致
+    # 在 C++ 里 YoloKernel 结构体可能像: struct YoloKernel { int width; int height; float anchors[6]; }
+    # 因此在 Python 需要按相同字节序打包 (int32, int32, float32*x)
+    anchors = [
+        [10,13, 16,30, 33,23],       # s8
+        [30,61, 62,45, 59,119],      # s16
+        [116,90, 156,198, 373,326]   # s32
+    ]
+    kernels = []
 
-find_package(OpenCV)
-include_directories(${OpenCV_INCLUDE_DIRS})
+    for i in range(len(anchors)):
+        w = kInputW / scales[i]
+        h = kInputH / scales[i]
+        # 一个 YoloKernel = (width, height, anchors)
+        kernel = [w, h] + anchors[i]
+        kernels.extend(kernel)
+    kernels = np.array(kernels, dtype=np.float32)    
+    kernels_field = trt.PluginField("kernels", kernels, trt.PluginFieldType.FLOAT32) 
 
-add_executable(yolov5_det yolov5_det.cpp ${SRCS})
-target_link_libraries(yolov5_det nvinfer)
-target_link_libraries(yolov5_det cudart)
-target_link_libraries(yolov5_det myplugins)
-target_link_libraries(yolov5_det ${OpenCV_LIBS})
+    # 6) 组装 PluginFieldCollection
+    fields = [f_netinfo, kernels_field]
+    field_collection = trt.PluginFieldCollection(fields)
 
-add_executable(yolov5_cls yolov5_cls.cpp ${SRCS})
-target_link_libraries(yolov5_cls nvinfer)
-target_link_libraries(yolov5_cls cudart)
-target_link_libraries(yolov5_cls myplugins)
-target_link_libraries(yolov5_cls ${OpenCV_LIBS})
+    # 7) 创建 plugin 实例
+    plugin_obj = creator.create_plugin(name="yololayer", field_collection=field_collection)
+    if plugin_obj is None:
+        raise RuntimeError("creator.create_plugin returned None")
 
-add_executable(yolov5_seg yolov5_seg.cpp ${SRCS})
-target_link_libraries(yolov5_seg nvinfer)
-target_link_libraries(yolov5_seg cudart)
-target_link_libraries(yolov5_seg myplugins)
-target_link_libraries(yolov5_seg ${OpenCV_LIBS})
+    # 8) 选择输入 tensors：优先使用 det_tensors，否则用 concat_layer_index
+    inputs = det_tensors
+    concat_tensor = network.get_layer(concat_layer_index).get_output(0)
+    # 如果 concat_tensor 在 network outputs 中已经被标记 output，需要先 unmark
+    try:
+        network.unmark_output(concat_tensor)
+    except Exception:
+        # 如果没被标记，这会抛错或返回；忽略
+        pass
 
-这是之前的版本，他的版本会有这个头文件风险吗
+    # 9) 把 plugin 插入网络
+    yolo_layer = network.add_plugin_v2(inputs=inputs, plugin=plugin_obj)
+    if yolo_layer is None:
+        raise RuntimeError("network.add_plugin_v2 returned None")
+
+    # 10) 命名并标记输出（示例）
+    yolo_layer.get_output(0).name = "yolo_out_post"
+    network.mark_output(yolo_layer.get_output(0))
+
+    return yolo_layer
