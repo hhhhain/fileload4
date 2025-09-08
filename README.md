@@ -1,15 +1,16 @@
-2025-09-08 16:46:51 INFO object_detect.__init__(object_detect.py:180): bingding:images,(10, 3, 640, 1088)
-(10, 3, 640, 1088)
-dtype is <class 'numpy.float16'>
-3333333333333333
-host_mem is (10, 3, 640, 1088)
-host_mem.nbytes is 41779200
-2025-09-08 16:46:51 INFO object_detect.__init__(object_detect.py:180): bingding:yolo_out_post,(10, 38001, 1, 1)
-(10, 38001, 1, 1)
-dtype is <class 'numpy.float32'>
-3333333333333333
-host_mem is (10, 38001, 1, 1)
-host_mem.nbytes is 1520040
-777777777777777
-4444444444444444444
-Floating point exception
+  printf("11 here\n");
+  for (unsigned int i = 0; i < mYoloKernel.size(); ++i) {
+    printf("22 here\n");
+    const auto& yolo = mYoloKernel[i];
+    printf("33 here\n");
+    // grid数乘以bs
+    numElem = yolo.width * yolo.height * batchSize;
+    printf("44 here\n");
+    // 每个cell对应一个线程，如果线程大于总cell数了，那就降低线程的数量。而mThreadCount一般都比numElem小得多。
+    if (numElem < mThreadCount) mThreadCount = numElem;
+    printf("55 here\n");
+    // 这里的用法是cuda kernel的调用。假设用__global__定义了一个函数fun。那么执行的时候就必须这样调用执行 fun<<<(四个内核参数)>>>(自己定义的输入参数)
+    // 这里的内核参数是控制线程数的，分别是<<<gridsize, blocksize, sharedmem, stream>>>。
+    // 先看第二个参数，blocksize决定了每个block能处理多少个cell，这里设置为mThreadCount，已知一般情况下mThreadCount都比numElem小得多，需要计算到底需要多少个mThreadCount
+    // 第一个参数是向上取整的写法。计算出需要多少个block。这样保证了每个cell都有一个线程进行处理。
+    printf("mThreadCount is %d", mThreadCount); 
