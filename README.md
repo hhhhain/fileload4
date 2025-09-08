@@ -1,1 +1,4 @@
-[TRT] [E] 3: [engine.cpp::getUserRegion::1312] Error Code 3: Internal Error (call of getBindingDimensions with invalid bindingIndex -1)
+int YoloLayerPlugin::enqueue(int batchSize, const void* const* inputs, void* TRT_CONST_ENQUEUE* outputs, void* workspace, cudaStream_t stream) TRT_NOEXCEPT {
+  forwardGpu((const float* const*)inputs, (float*)outputs[0], stream, batchSize);
+  return 0;
+}
