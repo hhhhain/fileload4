@@ -1,3 +1,15 @@
+network = builder.create_network(flag)
+parser = trt.OnnxParser(network, logger)
+if not parser.parse_from_file(str(onnx)):
+      raise RuntimeError(f"failed to load ONNX file: {onnx}")
+det1 = network.get_layer(242).get_output(0)
+det2 = network.get_layer(267).get_output(0)
+det3 = network.get_layer(292).get_output(0)
+
+# 820是int8的输出层序号，293是fp16的输出层序号。
+add_yolo_layer_py(network, det_tensors=[det1,det2,det3], concat_layer_index=293, is_segmentation=False)
+
+
 fp16：
 
 
