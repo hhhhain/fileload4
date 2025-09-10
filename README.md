@@ -1,3 +1,26 @@
+  for (int k = 0; k < kNumAnchor; ++k) {
+    // 这条语句是在对某一张图的所有cell求置信度，0或者1. 为什么是所有cell？因为每一个idx都绑定了线程，都是并行执行的。[anchor1][anchor2][anchor3]的顺序在内存中存放。
+    float box_prob = Logist(curInput[idx + k * info_len_i * total_grid + 4 * total_grid]);
+    // 所有cell都是并行的，所以如果判断出当前的cell的置信度太低的话，就不管这个cell了。执行下一次for，也就是下一个anchor，同理。
+    if (box_prob < kIgnoreThresh) continue;
+    int class_id = 0;
+    float max_cls_prob = 0.0;
+    // 遍历80个类，找到最大的可能性，就是class。同样是每个cell并行的。
+    for (int i = 5; i < 5 + classes; ++i) {
+      float p = Logist(curInput[idx + k * info_len_i * total_grid + i * total_grid]);
+      if (p > max_cls_prob) {
+        max_cls_prob = p;
+        class_id = i - 5;
+      }
+    }
+    // 第几张乘以单张的大小，res_count指当前这一张的输出起点。第一位res_count[0]记录了已写入的数量。
+    // atomicAdd是原子加法，防止多线程写入同一个地址造成覆盖等。res_count总数+1，比如已经写了1223个detection结果。detection是上面说的结构体：坐标、置信度、类别。
+    // 这里有个问题，这里的超过框的总数就不写了，是怎么一个并行情况？都在抢着写？怎么一个层次去抢的？初步感觉是所有的cell都在判断最小的anchor，从小到大了写。
+    float *res_count = output + bnIdx * outputElem;
+    int count = (int)atomicAdd(res_count, 1);
+    if (count >= maxoutobject) return;
+
+
 network = builder.create_network(flag)
 parser = trt.OnnxParser(network, logger)
 if not parser.parse_from_file(str(onnx)):
