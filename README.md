@@ -1,21 +1,4 @@
-    float *res_count = output + bnIdx * outputElem;
-    int count = (int)atomicAdd(res_count, 1);
-    if (count >= maxoutobject) return;
-    // 每个cell计算自己应该要写的位置，转成detection指针，以后要写的时候就可以用det->结构。比如下面。
-    char *data = (char*)res_count + sizeof(float) + count * sizeof(Detection);
-    Detection *det = (Detection*)(data);
-    printf("res_count address: %p, value: %f, atomic count: %d\n", res_count, *res_count, count);
-
-
-res_count address: 0x7f31d6800000, value: 10973.000000, atomic count: 574
-res_count address: 0x7f31d6800000, value: 10973.000000, atomic count: 594
-res_count address: 0x7f31d6800000, value: 10973.000000, atomic count: 614
-res_count address: 0x7f31d6800000, value: 10973.000000, atomic count: 634
-res_count address: 0x7f31d6800000, value: 10973.000000, atomic count: 654
-res_count address: 0x7f31d6800000, value: 10973.000000, atomic count: 674
-res_count address: 0x7f31d6800000, value: 10973.000000, atomic count: 694
-res_count address: 0x7f31d6800000, value: 10973.000000, atomic count: 714
-res_count address: 0x7f31d6800000, value: 10973.000000, atomic count: 734
+0x7f2bec928e20, value: 0x7f2bec9408f4
 
 
 
