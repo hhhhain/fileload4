@@ -1,6 +1,2 @@
-        for i in range(50):
-            cuda.memcpy_htod_async(cuda_inputs[0], host_inputs[0], stream)
-            context.execute_async_v2(bindings=bindings, stream_handle=stream.handle)
-            cuda.memcpy_dtoh_async(host_outputs[-1], cuda_outputs[-1], stream)
-
-            这么warmup正确吗？我发现不热身传回来的rescount是一万多，热身传回来的是0
+[0.0000000e+00 1.4000000e+02 6.1200000e+02 4.0000000e+01 1.5133368e+01
+ 5.0000483e-01 2.5000000e+01
