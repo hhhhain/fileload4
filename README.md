@@ -1,5 +1,1 @@
-    // 清零每张图的 res_count
-    for (int b = 0; b < batchSize; ++b) {
-        float* res_count = static_cast<float*>(outputs[0]) + b * outputElem;
-        cudaMemsetAsync(res_count, 0, sizeof(float), stream);
-    }
+ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 1 dimensions. The detected shape was (10,) + inhomogeneous part.
