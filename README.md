@@ -1,8 +1,9 @@
-    for i in range(network.num_layers):
-        layer = network.get_layer(i)
-        print(f"index={i}, name={layer.name}, type={layer.type}, nb_outputs={layer.num_outputs}")
-        for j in range(layer.num_outputs):
-            print(f"  output[{j}] shape: {layer.get_output(j).shape}")
+    if (tid < 3) {
+        printf("Thread %d: res_count address: %p, value: %f, atomic count: %d\n", tid, res_count, *res_count, count);
+    }
+
+    // 如果 tid >=3 不想执行后续逻辑，就直接 return
+    if (tid >= 3) return;
 
     
 fp16：
