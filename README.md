@@ -1,7 +1,8 @@
-        PLUGIN_LIBRARY = "packages/libmyplugins.so"
+        PLUGIN_LIBRARY = "packages/libmyplugins_from11.4.so"
         ctypes.CDLL(PLUGIN_LIBRARY)
-        PLUGIN_LIBRARY2 = "packages/libv8myplugins_v2.so"
-        ctypes.CDLL(PLUGIN_LIBRARY2)
-        cp_yolov5trt = YoLov5TRT(cp_engine_file_path)
-        screen_yolov5trt = YoLov5TRT(screen_engine_file_path)
-        pose_yolov5trt = YoLov5TRT(pose_engine_file_path)
+
+          File "/home/ma-user/work/copy/files/video-deal-search/video-deal-service/customize_service.py", line 34, in __init__
+    ctypes.CDLL(PLUGIN_LIBRARY)
+  File "/home/ma-user/anaconda3/envs/PyTorch-2.1.0/lib/python3.10/ctypes/__init__.py", line 374, in __init__
+    self._handle = _dlopen(self._name, mode)
+OSError: libcudart.so.11.0: cannot open shared object file: No such file or directory
