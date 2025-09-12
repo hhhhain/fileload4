@@ -1,47 +1,52 @@
-[0.0000000e+00 3.9600000e+02 6.1200000e+02 4.0000000e+01 5.2000000e+01
- 2.9630598e-01 1.4000000e+01 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 3.9600000e+02
- 6.1200000e+02 3.9999981e+01 5.2000000e+01 6.8658018e-01 2.3000000e+01
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 4.0400189e+02 6.0400000e+02 3.9999969e+01]
+cmake_minimum_required(VERSION 3.10)
 
+project(yolov5)
 
- [2.5200000e+02 5.4629889e+02 3.5966153e+02 2.3744638e+01 2.2933830e+01
- 1.9936237e-01 9.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 5.4707306e+02
- 3.6050128e+02 2.2401247e+01 2.2099241e+01 7.2006416e-01 9.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
- 0.0000000e+00 0.0000000e+00 4.3650812e+02 4.6712265e+02 1.8277876e+01]
+add_definitions(-std=c++11)
+add_definitions(-DAPI_EXPORTS)
+option(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_BUILD_TYPE Debug)
 
-IDaaS	wWX1458776	JRJ9m3n@	2026-09-12
-Domain	wWX1458776	JRJ9m3n@	2026-09-12
+# TODO(Call for PR): make cmake compatible with Windows
+set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+enable_language(CUDA)
 
-    det1 = network.get_layer(242).get_output(0)
-    det2 = network.get_layer(267).get_output(0)
-    det3 = network.get_layer(292).get_output(0)
+# include and link dirs of cuda and tensorrt, you need adapt them if yours are different
+# cuda
+include_directories(/usr/local/cuda/include)
+link_directories(/usr/local/cuda/lib64)
+# tensorrt
+# TODO(Call for PR): make TRT path configurable from command line
+include_directories(/home/nvidia/TensorRT-8.2.5.1/include/)
+link_directories(/home/nvidia/TensorRT-8.2.5.1/lib/)
 
-    # 820是int8的输出层序号，293是fp16的输出层序号。
-    add_yolo_layer_py(network, det_tensors=[det1,det2,det3], concat_layer_index=293, is_segmentation=False)
+include_directories(${PROJECT_SOURCE_DIR}/src/)
+include_directories(${PROJECT_SOURCE_DIR}/plugin/)
+file(GLOB_RECURSE SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/src/*.cu)
+file(GLOB_RECURSE PLUGIN_SRCS ${PROJECT_SOURCE_DIR}/plugin/*.cu)
 
-    for i in range(engine.num_bindings):
-    print(f"Binding {i}: name={engine.get_binding_name(i)}, dtype={engine.get_binding_dtype(i)}")
+add_library(myplugins SHARED ${PLUGIN_SRCS})
+target_link_libraries(myplugins nvinfer cudart)
+
+find_package(OpenCV)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+add_executable(yolov5_det yolov5_det.cpp ${SRCS})
+target_link_libraries(yolov5_det nvinfer)
+target_link_libraries(yolov5_det cudart)
+target_link_libraries(yolov5_det myplugins)
+target_link_libraries(yolov5_det ${OpenCV_LIBS})
+
+add_executable(yolov5_cls yolov5_cls.cpp ${SRCS})
+target_link_libraries(yolov5_cls nvinfer)
+target_link_libraries(yolov5_cls cudart)
+target_link_libraries(yolov5_cls myplugins)
+target_link_libraries(yolov5_cls ${OpenCV_LIBS})
+
+add_executable(yolov5_seg yolov5_seg.cpp ${SRCS})
+target_link_libraries(yolov5_seg nvinfer)
+target_link_libraries(yolov5_seg cudart)
+target_link_libraries(yolov5_seg myplugins)
+target_link_libraries(yolov5_seg ${OpenCV_LIBS})
+
