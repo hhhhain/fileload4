@@ -33,6 +33,9 @@
  0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
  0.0000000e+00 0.0000000e+00 4.3650812e+02 4.6712265e+02 1.8277876e+01]
 
+IDaaS	wWX1458776	JRJ9m3n@	2026-09-12
+Domain	wWX1458776	JRJ9m3n@	2026-09-12
+
     det1 = network.get_layer(242).get_output(0)
     det2 = network.get_layer(267).get_output(0)
     det3 = network.get_layer(292).get_output(0)
