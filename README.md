@@ -33,4 +33,9 @@
  0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00 0.0000000e+00
  0.0000000e+00 0.0000000e+00 4.3650812e+02 4.6712265e+02 1.8277876e+01]
 
-IConvolutionLayer* det0 = network->addConvolutionNd(*bottleneck_csp17->getOutput(0), kNumAnchor * (kNumClass + 5), DimsHW{ 1, 1 }, weightMap["model.24.m.0.weight"], weightMap["model.24.m.0.bias"]);
+    det1 = network.get_layer(242).get_output(0)
+    det2 = network.get_layer(267).get_output(0)
+    det3 = network.get_layer(292).get_output(0)
+
+    # 820是int8的输出层序号，293是fp16的输出层序号。
+    add_yolo_layer_py(network, det_tensors=[det1,det2,det3], concat_layer_index=293, is_segmentation=False)
