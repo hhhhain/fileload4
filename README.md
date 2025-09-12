@@ -39,3 +39,6 @@
 
     # 820是int8的输出层序号，293是fp16的输出层序号。
     add_yolo_layer_py(network, det_tensors=[det1,det2,det3], concat_layer_index=293, is_segmentation=False)
+
+    for i in range(engine.num_bindings):
+    print(f"Binding {i}: name={engine.get_binding_name(i)}, dtype={engine.get_binding_dtype(i)}")
