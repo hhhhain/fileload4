@@ -1,1 +1,5 @@
-OSError: /usr/local/cuda/lib64/libcudart.so.11.0: version `libcudart.so.11.0' not found (required by packages/libmyplugins_from11.4.so
+int YoloLayerPlugin::enqueue(int batchSize, const void* const* inputs, void* TRT_CONST_ENQUEUE* outputs, void* workspace, cudaStream_t stream) TRT_NOEXCEPT {
+  // printf("enqueue here\n");
+  forwardGpu((const float* const*)inputs, (float*)outputs[0], stream, batchSize);
+  return 0;
+}
