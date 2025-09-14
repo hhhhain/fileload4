@@ -1,27 +1,44 @@
-我打印network.num_layers得到：
-  output[0] shape: (10, 3, 20, 34, 2)
-index=286, name=/model.24/Constant_21_output_0, type=LayerType.CONSTANT, nb_outputs=1
-  output[0] shape: ()
-index=287, name=(Unnamed Layer* 287) [Shuffle], type=LayerType.SHUFFLE, nb_outputs=1
-  output[0] shape: (1, 1, 1, 1, 1)
-index=288, name=/model.24/Pow_2, type=LayerType.ELEMENTWISE, nb_outputs=1
-  output[0] shape: (10, 3, 20, 34, 2)
-index=289, name=/model.24/Constant_22_output_0, type=LayerType.CONSTANT, nb_outputs=1
-  output[0] shape: (1, 3, 20, 34, 2)
-index=290, name=/model.24/Mul_11, type=LayerType.ELEMENTWISE, nb_outputs=1
-  output[0] shape: (10, 3, 20, 34, 2)
-index=291, name=/model.24/Concat_2, type=LayerType.CONCATENATION, nb_outputs=1
-  output[0] shape: (10, 3, 20, 34, 31)
-index=292, name=/model.24/Reshape_5, type=LayerType.SHUFFLE, nb_outputs=1
-  output[0] shape: (10, 2040, 31)
-index=293, name=/model.24/Concat_3, type=LayerType.CONCATENATION, nb_outputs=1
-  output[0] shape: (10, 42840, 31)
-我搜索没发现有93的结果，但是打印model，发现：
-    )
-    (24): Detect(
-      (m): ModuleList(
-        (0): Conv2d(128, 93, kernel_size=(1, 1), stride=(1, 1))
-        (1): Conv2d(256, 93, kernel_size=(1, 1), stride=(1, 1))
-        (2): Conv2d(512, 93, kernel_size=(1, 1), stride=(1, 1))
-      )
-    )却包含有93的层，怎么回事？
+static IPluginV2Layer* addYoLoLayer(INetworkDefinition *network, std::map<std::string, Weights>& weightMap, std::string lname, std::vector<IConvolutionLayer*> dets, bool is_segmentation = false) {
+  auto creator = getPluginRegistry()->getPluginCreator("YoloLayer_TRT", "1");
+  auto anchors = getAnchors(weightMap, lname);
+  PluginField plugin_fields[2];
+
+  // kNumClass, kInputW, kInputH, kMaxNumOutputBbox这几个参数在config.h头文件里宏定义.
+  int netinfo[5] = {kNumClass, kInputW, kInputH, kMaxNumOutputBbox, (int)is_segmentation};
+  plugin_fields[0].data = netinfo;
+  plugin_fields[0].length = 5;
+  plugin_fields[0].name = "netinfo";
+  plugin_fields[0].type = PluginFieldType::kFLOAT32;
+
+  //load strides from Detect layer
+  assert(weightMap.find(lname + ".strides") != weightMap.end() && "Not found `strides`, please check gen_wts.py!!!");
+  Weights strides = weightMap[lname + ".strides"];
+  auto *p = (const float*)(strides.values);
+  std::vector<int> scales(p, p + strides.count);
+
+  std::vector<YoloKernel> kernels;
+  for (size_t i = 0; i < anchors.size(); i++) {
+    YoloKernel kernel;
+    kernel.width = kInputW / scales[i];
+    kernel.height = kInputH / scales[i];
+    memcpy(kernel.anchors, &anchors[i][0], anchors[i].size() * sizeof(float));
+    // push_back用来在vector末尾添加一个元素.
+    kernels.push_back(kernel);
+  }
+  plugin_fields[1].data = &kernels[0];
+  plugin_fields[1].length = kernels.size();
+  plugin_fields[1].name = "kernels";
+  plugin_fields[1].type = PluginFieldType::kFLOAT32;
+  PluginFieldCollection plugin_data;
+  plugin_data.nbFields = 2;
+  plugin_data.fields = plugin_fields;
+  
+  // 这里创建了具体的plugin实例.
+  IPluginV2 *plugin_obj = creator->createPlugin("yololayer", &plugin_data);
+  std::vector<ITensor*> input_tensors;
+  // 输入的定义,std::vector<IConvolutionLayer*> dets, dets是一个vector容器,容器里面每个元素是IConvolutionLayer*,指向三个输出卷积层的指针.为什么知道是输出的三个卷积层呢,这个函数被调用的地方有dets的具体赋值.
+  // 遍历dets,也就是每个输出层,一共3个
+  for (auto det: dets) {
+    // 获取输出卷积层的输出tensor,放进input_tensors.为什么叫input呢,因为是plugin的input. 必须要索引,不能().
+    input_tensors.push_back(det->getOutput(0));
+  }
