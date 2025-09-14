@@ -11,12 +11,5 @@ __global__ void debugKernel(const T* data, int n)
     }
 }
 
-
-const __half* const* d_input = (const __half* const*)inputs;
-__global__ void debugKernel(const __half* data, int n)
-{
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx < n && idx < 10) {
-        printf("data[%d] = %f\n", idx, __half2float(data[idx]));
-    }
-}
+const __half* const* d_input_half = (const __half* const*)inputs;
+Tn::debugKernel_half<<<1, 1, 0, stream>>>(d_input_half, n);
