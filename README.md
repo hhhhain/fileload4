@@ -1,3 +1,1 @@
-        host_inputs[0] = host_inputs[0].astype(self.input_dtype)
-        print(host_inputs[0][0-20889588])
-        exit()
+IConvolutionLayer* det0 = network->addConvolutionNd(*bottleneck_csp17->getOutput(0), kNumAnchor * (kNumClass + 5), DimsHW{ 1, 1 }, weightMap["model.24.m.0.weight"], weightMap["model.24.m.0.bias"]);
