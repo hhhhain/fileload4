@@ -1,11 +1,24 @@
-det1 = network.get_layer(242).get_output(0)
-det1_fp32 = network.add_identity(det1).get_output(0)
-det1_fp32.dtype = trt.DataType.FLOAT
+data[0] = 0.945801
+data[1] = -0.538086
+data[2] = -1.158203
+data[3] = -0.915527
+data[4] = -1.947266
+data[5] = -0.952637
+data[6] = -0.970215
+data[7] = -0.213501
+data[8] = -0.470215
+data[9] = -1.466797 
 
-det2 = network.get_layer(267).get_output(0)
-det2_fp32 = network.add_identity(det2).get_output(0)
-det2_fp32.dtype = trt.DataType.FLOAT
+上面这组数是正确的，下面这组数不正确：
+data[0] = 7.523438
+data[1] = 5.960938
+data[2] = 17.765625
+data[3] = 14.757812
+data[4] = 0.000000
+data[5] = 0.000002
+data[6] = 0.000000
+data[7] = 0.022629
+data[8] = 0.000779
+data[9] = 0.000000
 
-det3 = network.get_layer(292).get_output(0)
-det3_fp32 = network.add_identity(det3).get_output(0)
-det3_fp32.dtype = trt.DataType.FLOAT
+你有头绪吗？仅仅是float16解读成float32造成的吗？还是什么原因？能否从数值上大概分析？
