@@ -1,3 +1,2 @@
-for t in det_tensors:
-    if t.is_network_output:  # 确认这个 tensor 真的被标记为输出
-        network.unmark_output(t)
+det1 = network.get_layer(218).get_output(0)
+det_tensors=[det1,det2,det3]
