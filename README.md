@@ -1,23 +1,22 @@
-    # detect模型只用了output0
-    output_names = ["output0", "output1"] if isinstance(model, SegmentationModel) else ["output0"]
-    if dynamic:
+import numpy as np
 
-        dynamic = {"images": {0: "batch", 2: "height", 3: "width"}}  # shape(1,3,640,640)
-        if isinstance(model, SegmentationModel):
-            dynamic["output0"] = {0: "batch", 1: "anchors"}  # shape(1,25200,85)
-            dynamic["output1"] = {0: "batch", 2: "mask_height", 3: "mask_width"}  # shape(1,32,160,160)
-        elif isinstance(model, DetectionModel):
-            # anchors可变,指的是不一定是25200个框.
-            dynamic["output0"] = {0: "batch", 1: "anchors"}  # shape(1,25200,85)
+# det3 是 ONNX 输出 (batch, num_boxes, 31)
+batch, num_boxes, c = det3.shape
 
-    torch.onnx.export(
-        model.cpu() if dynamic else model,  # --dynamic only compatible with cpu
-        im.cpu() if dynamic else im,
-        f,
-        verbose=False,
-        opset_version=opset,
-        do_constant_folding=True,  # WARNING: DNN inference with torch>=1.12 may require do_constant_folding=False
-        input_names=["images"],
-        output_names=output_names,
-        dynamic_axes=dynamic or None,
-    )
+# 你的 detection 层有 3 anchors
+num_anchors = 3
+num_classes = 26
+per_anchor = num_classes + 5  # 31
+
+# 确认 c == per_anchor
+assert c == per_anchor
+
+# 计算特征图尺寸 H, W
+# det3.num_boxes = H * W * num_anchors
+H = W = int((num_boxes // num_anchors) ** 0.5)
+assert H * W * num_anchors == num_boxes
+
+# reshape 回卷积输出 (batch, num_anchors*(num_classes+5), H, W)
+det3_conv_like = det3.reshape(batch, H, W, num_anchors, per_anchor)  # (B,H,W,3,31)
+det3_conv_like = det3_conv_like.transpose(0, 3, 4, 1, 2)             # (B,3,31,H,W)
+det3_conv_like = det3_conv_like.reshape(batch, num_anchors * per_anchor, H, W)  # (B,93,H,W)
