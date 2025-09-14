@@ -15,3 +15,7 @@ add output done
 host_mem is 632400
 add output done
 2025-09-14 14:22:33 INFO object_detect.__init__(object_detect.py:180): bingding:yolo_out_post,(10, 38001, 1, 1)
+
+
+    inputs = det_tensors
+    network.unmark_output(inputs)
