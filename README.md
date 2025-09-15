@@ -1,6 +1,3 @@
-# 保存
-np.save("input_tensor.npy", host_inputs[0])
-
-# 加载
-loaded = np.load("input_tensor.npy")
-print(loaded.shape, loaded.dtype)
+        threading.Thread.__init__(self)
+        # Make self the active context, pushing it on top of the context stack.
+        self.ctx.push()
