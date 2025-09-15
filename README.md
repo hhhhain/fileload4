@@ -1,15 +1,39 @@
-  printf("222222222222222222222222\n");
-  for (unsigned int i = 0; i < mYoloKernel.size(); ++i) {
-    const auto& yolo = mYoloKernel[i];
-    // grid数乘以bs
-    numElem = yolo.width * yolo.height * batchSize;
-    // 每个cell对应一个线程，如果线程大于总cell数了，那就降低线程的数量。而mThreadCount一般都比numElem小得多。
-    if (numElem < mThreadCount) mThreadCount = numElem;
-    printf("333333333333333333\n");
-    // 这里的用法是cuda kernel的调用。假设用__global__定义了一个函数fun。那么执行的时候就必须这样调用执行 fun<<<(四个内核参数)>>>(自己定义的输入参数)
-    // 这里的内核参数是控制线程数的，分别是<<<gridsize, blocksize, sharedmem, stream>>>。
-    // 先看第二个参数，blocksize决定了每个block能处理多少个cell，这里设置为mThreadCount，已知一般情况下mThreadCount都比numElem小得多，需要计算到底需要多少个mThreadCount
-    // 第一个参数是向上取整的写法。计算出需要多少个block。这样保证了每个cell都有一个线程进行处理。
-    CalDetection << < (numElem + mThreadCount - 1) / mThreadCount, mThreadCount, 0, stream >> >
-      (inputs[i], output, numElem, mYoloV5NetWidth, mYoloV5NetHeight, mMaxOutObject, yolo.width, yolo.height, (float*)mAnchor[i], mClassCount, outputElem, is_segmentation_);
+  //load strides from Detect layer
+  assert(weightMap.find(lname + ".strides") != weightMap.end() && "Not found `strides`, please check gen_wts.py!!!");
+  Weights strides = weightMap[lname + ".strides"];
+  auto *p = (const float*)(strides.values);
+  std::vector<int> scales(p, p + strides.count);
+
+  std::vector<YoloKernel> kernels;
+  for (size_t i = 0; i < anchors.size(); i++) {
+    YoloKernel kernel;
+    kernel.width = kInputW / scales[i];
+    kernel.height = kInputH / scales[i];
+    memcpy(kernel.anchors, &anchors[i][0], anchors[i].size() * sizeof(float));
+    // push_back用来在vector末尾添加一个元素.
+    kernels.push_back(kernel);
   }
+  plugin_fields[1].data = &kernels[0];
+  plugin_fields[1].length = kernels.size();
+  plugin_fields[1].name = "kernels";
+  plugin_fields[1].type = PluginFieldType::kFLOAT32;
+  我根据这个c++我自己翻译成了Python，但是没解析出head里面的w h这些值，我翻译是不是错了：
+    scales = [8, 16, 32]
+    kernels_bytes = b""
+    anchors = [
+        [10,13, 16,30, 33,23],       # s8
+        [30,61, 62,45, 59,119],      # s16
+        [116,90, 156,198, 373,326]   # s32
+    ]
+    kernels = []
+    for i in range(len(anchors)):
+        w = int(kInputW / scales[i])   # int
+        h = int(kInputH / scales[i])   # int
+        kernels_bytes += struct.pack("ii", w, h)
+        kernels_bytes += struct.pack("6f", *anchors[i])
+    kernels = np.frombuffer(kernels_bytes, dtype=np.uint8)
+    kernels_field = trt.PluginField("kernels", kernels, trt.PluginFieldType.UNKNOWN)
+    fields = [f_netinfo, kernels_field]
+    field_collection = trt.PluginFieldCollection(fields)
+
+    
