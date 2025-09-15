@@ -1,58 +1,7 @@
-lsof /dev/nvidia*
-COMMAND     PID    USER   FD   TYPE  DEVICE SIZE/OFF NODE NAME
-python  2839808 ma-user  mem    CHR   195,0            12 /dev/nvidia0
-python  2839808 ma-user  mem    CHR 195,255            13 /dev/nvidiactl
-python  2839808 ma-user  mem    CHR   235,0            14 /dev/nvidia-uvm
-python  2839808 ma-user    3u   CHR 195,255      0t0   13 /dev/nvidiactl
-python  2839808 ma-user    4u   CHR   235,0      0t0   14 /dev/nvidia-uvm
-python  2839808 ma-user    5u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user    6u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user    7u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   11u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   12u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   13u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   14u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   15u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   16u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   17u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   18u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   20u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   21u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   22u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   23u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   24u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   25u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   26u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   27u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   31u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   32u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   33u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   34u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   35u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   36u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   37u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   38u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   40u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   41u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   42u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   43u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   44u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   45u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   46u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   47u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   49u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   50u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   51u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   52u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   53u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   54u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   55u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   56u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   58u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   59u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   60u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   61u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   62u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   63u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   64u   CHR   195,0      0t0   12 /dev/nvidia0
-python  2839808 ma-user   65u   CHR   195,0      0t0   12 /dev/nvidia0
+        dummy = np.random.rand(10, 3, 640, 1088).astype(np.float16)
+        # run a couple times to ensure kernels compiled & memory allocated
+        for _ in range(20):
+            _outs = self.infer(dummy, "detection")
+        cuda.Context.synchronize()
+        print("warm up done.")        
+        exit()
