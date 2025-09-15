@@ -1,2 +1,6 @@
-        host_inputs = [batch_input_image.ravel()]  # [10. 640, 1088]-->ravel 10*640*1088
-        host_inputs[0] = host_inputs[0].astype(self.input_dtype)
+# 保存
+np.save("input_tensor.npy", host_inputs[0])
+
+# 加载
+loaded = np.load("input_tensor.npy")
+print(loaded.shape, loaded.dtype)
