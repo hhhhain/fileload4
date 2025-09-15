@@ -1,1 +1,1 @@
-pose_info = self.pose_info_all[str(person_box)]
+self.pose_info_all[str(detect_obj['box'])] = detect_obj
